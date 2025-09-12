@@ -1,0 +1,15 @@
+# Python/venv
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Logs
+*.log
+
+# Env/secretos
+*.env
+backend/.env
+frontend/.env
