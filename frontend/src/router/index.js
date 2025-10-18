@@ -1,3 +1,4 @@
+// src/router/index.js
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import ProfileView from '../views/ProfileView.vue'
@@ -5,13 +6,20 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import LogoutView from '../views/LogoutView.vue'
 import RefreshView from '../views/RefreshView.vue'
+import WelcomeView from '../views/WelcomeView.vue'
 import { useAuthStore } from '../store/auth'
 
 const routes = [
     {
         path: '/',
+        name: 'Welcome',
+        component: WelcomeView,
+    },
+    {
+        path: '/home',
         name: 'Home',
         component: HomeView,
+        meta: { requiresAuth: true }, 
     },
     {
         path: '/register',
@@ -43,10 +51,10 @@ const routes = [
 
 const router = createRouter({
     history: createWebHashHistory(),
-    routes, // short for `routes: routes`
+    routes,
 })
 
-router.beforeEach((to, from , next) => {
+router.beforeEach((to, from, next) => {
     const auth = useAuthStore();
     if (to.matched.some((record) => record.meta.requiresAuth)) {
         if (auth.isAuthenticated) {
@@ -57,7 +65,6 @@ router.beforeEach((to, from , next) => {
     } else {
         next();
     }
-
 })
 
 export default router;
