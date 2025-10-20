@@ -8,6 +8,8 @@ import LogoutView from '../views/LogoutView.vue'
 import RefreshView from '../views/RefreshView.vue'
 import WelcomeView from '../views/WelcomeView.vue'
 import { useAuthStore } from '../store/auth'
+import UploadDocumentsView from '../views/UploadDocumentsView.vue'
+
 
 const routes = [
     {
@@ -16,10 +18,15 @@ const routes = [
         component: WelcomeView,
     },
     {
+        path: '/upload',
+        name: 'Upload',
+        component: UploadDocumentsView,
+    },
+    {
         path: '/home',
         name: 'Home',
         component: HomeView,
-        meta: { requiresAuth: true }, 
+        meta: { requiresAuth: true },
     },
     {
         path: '/register',

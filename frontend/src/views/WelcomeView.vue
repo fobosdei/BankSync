@@ -91,7 +91,7 @@ const stats = ref([
 ]);
 
 const comenzar = () => {
-  router.push('/login');
+  router.push('/upload');
 };
 
 const verDemo = () => {
