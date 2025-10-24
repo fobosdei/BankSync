@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from passlib.context import CryptContext
-from ..setting.config import get_settings
+from setting.config import get_settings
 
 settings = get_settings()
 

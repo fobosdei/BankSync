@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import DashboardView from '../views/DashboardView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
@@ -10,18 +11,25 @@ import { useAuthStore } from '../store/auth'
 const routes = [
     {
         path: '/',
+        name: 'Login',
+        component: LoginView,
+    },
+    {
+        path: '/home',
         name: 'Home',
-        component: HomeView,
+        component: DashboardView,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/dashboard',
+        name: 'Dashboard',
+        component: DashboardView,
+        meta: { requiresAuth: true },
     },
     {
         path: '/register',
         name: 'Register',
         component: RegisterView,
-    },
-    {
-        path: '/login',
-        name: 'Login',
-        component: LoginView,
     },
     {
         path: '/profile',
@@ -53,7 +61,7 @@ router.beforeEach((to, from , next) => {
             next();
             return;
         }
-        next("/login");
+        next("/");
     } else {
         next();
     }

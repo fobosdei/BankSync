@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, VARCHAR, DATE, DateTime
 
-from ..database.config import Base
+from database.config import Base
 
 
 # Create User class

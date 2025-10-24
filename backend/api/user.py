@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-from ..auth.action import get_current_user
-from ..crud.user import UserCRUD
-from ..crud.dependencies import get_user_crud
-from ..schemas import user as user_schema
+from auth.action import get_current_user
+from crud.user import UserCRUD
+from crud.dependencies import get_user_crud
+from schemas import user as user_schema
 
 router = APIRouter(prefix="/users", tags=["users"])
 

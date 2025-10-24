@@ -38,34 +38,45 @@ function useFetchUser() {
 async function registerUser(form){
   const loadingStore = useLoadingStore();
   const dialogStore = useDialogStore();
+  
+  console.log('Starting registration...', form);
   loadingStore.setLoading();
 
-  apiRegister(form)
-  .then((res) => {
-    console.log(res);
+  try {
+    const res = await apiRegister(form);
+    console.log('Registration successful:', res);
+    
     dialogStore.setSuccess({
       title: "Register Success",
       firstLine: "You can login now",
       secondLine: "This dialog will close in 2 seconds",
     });
+    
     setTimeout(() => {
-      router.push("/login");
-    },2010);
-  })
-  .catch((err) => {
-    console.log(err);
+      dialogStore.reset();
+      router.push("/");
+    }, 2000);
+  } catch (err) {
+    console.error('Registration failed:', err);
+    console.error('Error details:', err.response?.data);
+    
+    const errorMessage = err.response?.data?.detail?.[0]?.msg || 
+                        err.response?.data?.detail || 
+                        "Please check your input";
+    
     dialogStore.setError({
       title: "Register Failed",
-      firstLine: "Please check your input",
+      firstLine: errorMessage,
       secondLine: "This dialog will close in 2 seconds",
     });
-  })
-  .finally(() => {
-    loadingStore.clearLoading();
+    
     setTimeout(() => {
       dialogStore.reset();
     }, 2000);
-  });
+  } finally {
+    console.log('Clearing loading...');
+    loadingStore.clearLoading();
+  }
 }
 
 async function loginUser(form){

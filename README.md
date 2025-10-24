@@ -1,18 +1,16 @@
-# FastAPI Vue OAuth2 Boilerplate
+# BankSync
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![DB : postgresql](https://img.shields.io/badge/DB-postgresql-blue.svg)](https://www.postgresql.org/)
-[![Backend : FastAPI](https://img.shields.io/badge/Backend-FastAPI-blue.svg)](https://fastapi.tiangolo.com/)
-[![Frontend : Vue](https://img.shields.io/badge/Frontend-Vue-green.svg)](https://v3.vuejs.org/)
+Aplicación web full-stack con Vue.js 3 + FastAPI + PostgreSQL (Supabase)
 
-<img src="https://raw.githubusercontent.com/jason810496/FastAPI-Vue-OAuth2/develop/docs/banner.png" alt="banner" />
+## 🚀 Características
 
-[中文說明](https://github.com/jason810496/FastAPI-Vue-OAuth2/blob/main/docs/README_zh.md)
-
-This boilerplate is a starting point for building a FastAPI backend using PostgreSQL with a Vue3 frontend. <br>
-It includes OAuth2 authentication with JWT tokens, and a simple user CRUD.
-
-> **Note :** For `Vue: Option API` + `VueX` version, please check out [archived-2023-11-22](https://github.com/jason810496/FastAPI-Vue-OAuth2/tree/archived-2023-11-22) branch
+- Backend FastAPI con PostgreSQL (Supabase)
+- CRUD con SQLAlchemy y soporte async
+- Autenticación OAuth2 con JWT tokens
+- Frontend Vue 3 con Composition API
+- Tailwind CSS para estilos modernos
+- Pinia para manejo de estado
+- Refresh token en cookies httpOnly, access token en memoria
 
 ## Demo
 `localhost` for frontend <br>
@@ -95,39 +93,84 @@ Click image to watch demo video on YouTube ☝️
 ### Production
 - `docker-compose up -d --build`
 
-## Development
-- Database
+## 📦 Instalación y Configuración
+
+### 1. Clonar el repositorio
+```bash
+git clone <tu-repo-url>
+cd BankSync
 ```
-docker run --name fastapi_vue_oauth2_postgresql -e POSTGRES_USER=fastapi_vue_user -e POSTGRES_PASSWORD=fastapi_vue_password -e POSTGRES_DB=fastapi_vue_dev -p 5432:5432 -d -v postgres_data_dev:/var/lib/postgresql/data postgres:15.1 
+
+### 2. Configurar Base de Datos (Supabase)
+
+1. Crea una cuenta en [Supabase](https://supabase.com)
+2. Crea un nuevo proyecto
+3. Ve a **Settings > Database** y copia la **Connection String** (Direct connection)
+4. Actualiza el archivo `backend/.env` con tu URL de Supabase:
+
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:[TU_PASSWORD]@db.[TU_PROJECT_ID].supabase.co:5432/postgres
 ```
-- Backend
-    <br>
-    **Note** : shuold change in change `DATABASE_URL` to `DEV_DATABASE_URL` in `backend/.env` <br>
-    - Poetry
-    ```
-    cd backend
 
-    poetry install
-    poetry shell
-    
-    python3 run.py
-    ```
-    - Create virtual environment
-    ```
-    cd backend
+### 3. Backend (FastAPI)
 
-    python3 -m venv venv
-    source venv/bin/activate
-    pip3 install -r requirements.txt
+#### Opción 1: Con Virtual Environment (Windows)
+```bash
+cd BankSync
+.Venv\Scripts\Activate
+cd backend
+pip install -r requirements.txt
+python run.py --dev
+```
 
-    python3 run.py
-    ```
-    - Frontend
-    ```
-    cd frontend
+#### Opción 2: Sin Virtual Environment
+```bash
+cd backend
+pip install -r requirements.txt
+python run.py --dev
+```
 
-    yarn dev
-    ```
+El backend estará disponible en: `http://localhost:5001`
+Documentación API: `http://localhost:5001/docs`
+
+### 4. Frontend (Vue 3 + Vite)
+
+En una nueva terminal:
+
+```bash
+cd BankSync
+.Venv\Scripts\Activate  # Si usas el virtual environment
+cd frontend
+npm install
+npm run dev
+```
+
+El frontend estará disponible en: `http://localhost:5173`
+
+## 🎯 Uso
+
+1. **Registro**: Navega a `/register` o haz clic en "Regístrate" en la página de login
+2. **Login**: Usa tus credenciales en la página principal (`/`)
+3. **Dashboard**: Después del login, serás redirigido a `/home` donde verás la lista de usuarios
+4. **Perfil**: Accede a `/profile` para ver tu perfil de usuario
+
+## 🔧 Configuración de Variables de Entorno
+
+### Backend (`backend/.env`)
+```env
+PORT=5001
+RELOAD=True
+DATABASE_URL=postgresql+asyncpg://postgres:[PASSWORD]@db.[PROJECT_ID].supabase.co:5432/postgres
+ACCESS_TOKEN_SECRET=tu_secret_key_aqui
+REFRESH_TOKEN_SECRET=tu_refresh_secret_key_aqui
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_MINUTES=10080
+```
+
+### Frontend (`frontend/.env`)
+```env
+VITE_APP_API_URL=http://localhost:5001/api
+```
 
 ### Advanced : Kubernetes
 

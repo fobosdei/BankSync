@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 
-from ..auth.action import get_current_user
-from ..crud.user import UserCRUD
-from ..crud.dependencies import get_user_crud
-from ..schemas import user as user_schema
+from auth.action import get_current_user
+from crud.user import UserCRUD
+from crud.dependencies import get_user_crud
+from schemas import user as user_schema
 
 router = APIRouter(prefix="/me", tags=["me"])
 

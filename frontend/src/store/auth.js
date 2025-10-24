@@ -53,8 +53,8 @@ export const useAuthStore = defineStore('auth', () => {
                 console.log(Date.now());    
 
                 if (isAuthenticated.value){
-                    router.push('/profile');
-                    console.log('pushed to profile');
+                    router.push('/home');
+                    console.log('pushed to home');
                 }
 
             }, 1000);
@@ -76,7 +76,7 @@ export const useAuthStore = defineStore('auth', () => {
 
             setTimeout(() => {
                 dialogStore.reset();
-                router.push('/login');
+                router.push('/');
             },1000);
         });
     }
@@ -109,11 +109,11 @@ export const useAuthStore = defineStore('auth', () => {
         .finally( () => {
             setTimeout(() => {
                 if (isAuthenticated.value){
-                    router.push('/profile');
-                    console.log('pushed to profile');
+                    router.push('/home');
+                    console.log('pushed to home');
                 }
                 else{
-                    router.push('/login');
+                    router.push('/');
                     console.log('pushed to login');
                 }
                 
@@ -140,11 +140,11 @@ export const useAuthStore = defineStore('auth', () => {
         .finally( () => {
             
             if (isAuthenticated.value){
-                router.push('/profile');
-                console.log('pushed to profile');
+                router.push('/home');
+                console.log('pushed to home');
             }
             else{
-                router.push('/login');
+                router.push('/');
                 console.log('pushed to login');
             }
 

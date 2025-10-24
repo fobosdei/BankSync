@@ -2,10 +2,10 @@ from fastapi import Depends, HTTPException
 from jose import jwt
 from typing import Annotated
 
-from ..database.config import async_session
-from ..crud.user import UserCRUD
-from .utils import verify_password, oauth2_scheme
-from ..setting.config import get_settings
+from database.config import async_session
+from crud.user import UserCRUD
+from auth.utils import verify_password, oauth2_scheme
+from setting.config import get_settings
 
 settings = get_settings()
 

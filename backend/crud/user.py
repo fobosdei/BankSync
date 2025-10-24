@@ -4,9 +4,9 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
-from ..auth.utils import get_password_hash
-from ..models.user import UserModels
-from ..schemas import user as user_schema
+from auth.utils import get_password_hash
+from models.user import UserModels
+from schemas import user as user_schema
 
 
 class UserCRUD:
@@ -34,7 +34,7 @@ class UserCRUD:
             birthday=user.birthday,
         )
         self.db_session.add(db_user)
-        await self.db_session.commit()
+        await self.db_session.flush()
         return db_user
 
     async def update_user_login(self, username: str):
