@@ -45,7 +45,6 @@
                     <option>Cuenta bancaria</option>
                     <option>Banco Nacional</option>
                     <option>Banco del País</option>
-                    <option>Banco Internacional</option>
                 </select>
                 <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option>Confianza IA</option>
