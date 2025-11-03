@@ -1,0 +1,14 @@
+[
+  {
+    "fecha": "2025-07-12",
+    "descripcion": "AGENCIAS",
+    "valor": 217354.0,
+    "tipo": "ingreso"
+  },
+  {
+    "fecha": "2025-07-22",
+    "descripcion": "SEGURO DE VIDA",
+    "valor": -3700.0,
+    "tipo": "gasto"
+  }
+]
