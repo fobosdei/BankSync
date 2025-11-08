@@ -35,7 +35,7 @@
                             </div>
                             <input 
                                 v-model="form.username" 
-                                type="text" 
+                                type="email" 
                                 id="emailField"
                                 class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-gray-900"
                                 placeholder="admin@empresa.com"

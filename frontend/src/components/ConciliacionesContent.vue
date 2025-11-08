@@ -14,7 +14,7 @@
                         </svg>
                         Exportar
                     </button>
-                    <button class="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 flex items-center gap-2">
+                    <button @click="showUploadModal = true" class="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
@@ -60,19 +60,19 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
                     <p class="text-sm text-gray-600 mb-2">Total</p>
-                    <p class="text-2xl font-bold text-gray-900">285 transacciones</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.total }} transacciones</p>
                 </div>
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
                     <p class="text-sm text-gray-600 mb-2">Conciliadas</p>
-                    <p class="text-2xl font-bold text-green-600">248 (87%)</p>
+                    <p class="text-2xl font-bold text-green-600">{{ stats.matched }} ({{ stats.matchedPercent }}%)</p>
                 </div>
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <p class="text-sm text-gray-600 mb-2">Pendientes</p>
-                    <p class="text-2xl font-bold text-orange-600">24 (8%)</p>
+                    <p class="text-sm text-gray-600 mb-2">Sin match PDF</p>
+                    <p class="text-2xl font-bold text-orange-600">{{ stats.unmatchedPdf }}</p>
                 </div>
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
-                    <p class="text-sm text-gray-600 mb-2">Requieren revisión</p>
-                    <p class="text-2xl font-bold text-red-600">13 (5%)</p>
+                    <p class="text-sm text-gray-600 mb-2">Sin match ERP</p>
+                    <p class="text-2xl font-bold text-red-600">{{ stats.unmatchedErp }}</p>
                 </div>
             </div>
 
@@ -152,11 +152,290 @@
                 </div>
             </div>
         </div>
+
+        <!-- Upload Modal -->
+        <div v-if="showUploadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="closeModal">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Conciliar con IA</h2>
+                    <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div v-if="!isProcessing && !conciliationResult" class="space-y-6">
+                    <!-- PDF Upload -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Extracto Bancario (PDF)</label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors cursor-pointer"
+                             @click="$refs.pdfInput.click()"
+                             @dragover.prevent
+                             @drop.prevent="handlePdfDrop">
+                            <input ref="pdfInput" type="file" accept=".pdf" @change="handlePdfSelect" class="hidden">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            <p class="mt-2 text-sm text-gray-600">
+                                <span v-if="!pdfFile" class="font-medium text-purple-600">Haz clic para subir</span>
+                                <span v-else class="font-medium text-green-600">✓ {{ pdfFile.name }}</span>
+                            </p>
+                            <p class="text-xs text-gray-500">PDF hasta 10MB</p>
+                        </div>
+                    </div>
+
+                    <!-- Excel Upload -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Movimientos ERP (Excel)</label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors cursor-pointer"
+                             @click="$refs.excelInput.click()"
+                             @dragover.prevent
+                             @drop.prevent="handleExcelDrop">
+                            <input ref="excelInput" type="file" accept=".xlsx,.xls" @change="handleExcelSelect" class="hidden">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                            <p class="mt-2 text-sm text-gray-600">
+                                <span v-if="!excelFile" class="font-medium text-purple-600">Haz clic para subir</span>
+                                <span v-else class="font-medium text-green-600">✓ {{ excelFile.name }}</span>
+                            </p>
+                            <p class="text-xs text-gray-500">Excel (.xlsx, .xls) hasta 10MB</p>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        <button @click="closeModal" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                            Cancelar
+                        </button>
+                        <button @click="processConciliation" :disabled="!pdfFile || !excelFile" 
+                                class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Procesar con IA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Processing State -->
+                <div v-if="isProcessing" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mb-4"></div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Procesando con IA...</h3>
+                    <p class="text-gray-600">{{ processingMessage }}</p>
+                </div>
+
+                <!-- Results State -->
+                <div v-if="conciliationResult && !isProcessing" class="space-y-6">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">¡Conciliación Completada!</h3>
+                        <p class="text-gray-600">{{ conciliationResult.summary.coincidencias_encontradas }} coincidencias encontradas</p>
+                    </div>
+
+                    <!-- Summary Stats -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <p class="text-sm text-blue-600 font-medium">Transacciones PDF</p>
+                            <p class="text-2xl font-bold text-blue-900">{{ conciliationResult.summary.total_transacciones_pdf }}</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <p class="text-sm text-green-600 font-medium">Transacciones ERP</p>
+                            <p class="text-2xl font-bold text-green-900">{{ conciliationResult.summary.total_transacciones_excel }}</p>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4">
+                            <p class="text-sm text-purple-600 font-medium">Coincidencias</p>
+                            <p class="text-2xl font-bold text-purple-900">{{ conciliationResult.summary.coincidencias_encontradas }}</p>
+                        </div>
+                        <div class="bg-orange-50 rounded-lg p-4">
+                            <p class="text-sm text-orange-600 font-medium">% Conciliado</p>
+                            <p class="text-2xl font-bold text-orange-900">{{ Math.round(conciliationResult.summary.porcentaje_conciliado) }}%</p>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        <button @click="closeModal" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                            Cerrar
+                        </button>
+                        <button @click="viewResults" class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
+                            Ver Detalles
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { apiConciliar } from '@/api/conciliation';
+
+// Modal state
+const showUploadModal = ref(false);
+const isProcessing = ref(false);
+const processingMessage = ref('Extrayendo transacciones del PDF...');
+const conciliationResult = ref(null);
+
+// File uploads
+const pdfFile = ref(null);
+const excelFile = ref(null);
+
+// Stats computed from results
+const stats = computed(() => {
+    if (!conciliationResult.value) {
+        return {
+            total: transactions.value.length,
+            matched: transactions.value.filter(t => t.status === 'Conciliado').length,
+            matchedPercent: Math.round((transactions.value.filter(t => t.status === 'Conciliado').length / transactions.value.length) * 100),
+            unmatchedPdf: transactions.value.filter(t => t.status === 'Pendiente').length,
+            unmatchedErp: transactions.value.filter(t => t.status === 'Revisar').length
+        };
+    }
+    
+    const summary = conciliationResult.value.summary;
+    return {
+        total: summary.total_transacciones_pdf + summary.total_transacciones_excel,
+        matched: summary.coincidencias_encontradas,
+        matchedPercent: Math.round(summary.porcentaje_conciliado),
+        unmatchedPdf: summary.transacciones_sin_match_pdf,
+        unmatchedErp: summary.transacciones_sin_match_excel
+    };
+});
+
+// File handlers
+const handlePdfSelect = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type === 'application/pdf') {
+        pdfFile.value = file;
+    }
+};
+
+const handleExcelSelect = (event) => {
+    const file = event.target.files[0];
+    if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+        excelFile.value = file;
+    }
+};
+
+const handlePdfDrop = (event) => {
+    const file = event.dataTransfer.files[0];
+    if (file && file.type === 'application/pdf') {
+        pdfFile.value = file;
+    }
+};
+
+const handleExcelDrop = (event) => {
+    const file = event.dataTransfer.files[0];
+    if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+        excelFile.value = file;
+    }
+};
+
+// Process conciliation
+const processConciliation = async () => {
+    if (!pdfFile.value || !excelFile.value) return;
+    
+    isProcessing.value = true;
+    processingMessage.value = 'Extrayendo transacciones del PDF con OpenAI...';
+    
+    try {
+        // Simulate progress messages
+        setTimeout(() => {
+            processingMessage.value = 'Procesando archivo Excel del ERP...';
+        }, 2000);
+        
+        setTimeout(() => {
+            processingMessage.value = 'Realizando conciliación inteligente...';
+        }, 4000);
+        
+        const response = await apiConciliar(pdfFile.value, excelFile.value);
+        conciliationResult.value = response.data;
+        
+        // Update transactions table with results
+        updateTransactionsFromResult(response.data);
+        
+    } catch (error) {
+        console.error('Error en conciliación:', error);
+        alert('Error al procesar la conciliación: ' + (error.response?.data?.detail || error.message));
+    } finally {
+        isProcessing.value = false;
+    }
+};
+
+// Update transactions table with conciliation results
+const updateTransactionsFromResult = (result) => {
+    const newTransactions = [];
+    
+    // Add matched transactions
+    result.matches.forEach((match, index) => {
+        newTransactions.push({
+            id: `match-${index}`,
+            date: match.pdf_transaction.fecha,
+            description: match.pdf_transaction.descripcion,
+            reference: match.pdf_transaction.referencia || 'N/A',
+            account: 'Banco',
+            bankAmount: match.pdf_transaction.monto,
+            accountingAmount: match.excel_transaction.monto,
+            status: 'Conciliado',
+            confidence: Math.round(match.confidence * 100)
+        });
+    });
+    
+    // Add unmatched PDF transactions
+    result.unmatched_extracto.forEach((trans, index) => {
+        newTransactions.push({
+            id: `pdf-${index}`,
+            date: trans.fecha,
+            description: trans.descripcion,
+            reference: trans.referencia || 'N/A',
+            account: 'Banco',
+            bankAmount: trans.monto,
+            accountingAmount: null,
+            status: 'Pendiente',
+            confidence: 0
+        });
+    });
+    
+    // Add unmatched ERP transactions
+    result.unmatched_erp.forEach((trans, index) => {
+        newTransactions.push({
+            id: `erp-${index}`,
+            date: trans.fecha,
+            description: trans.descripcion,
+            reference: trans.referencia || 'N/A',
+            account: 'ERP',
+            bankAmount: null,
+            accountingAmount: trans.monto,
+            status: 'Revisar',
+            confidence: 0
+        });
+    });
+    
+    transactions.value = newTransactions;
+};
+
+// View detailed results
+const viewResults = () => {
+    closeModal();
+    // Scroll to transactions table
+    window.scrollTo({ top: 400, behavior: 'smooth' });
+};
+
+// Close modal and reset
+const closeModal = () => {
+    showUploadModal.value = false;
+    pdfFile.value = null;
+    excelFile.value = null;
+    isProcessing.value = false;
+    conciliationResult.value = null;
+};
 
 const transactions = ref([
     {

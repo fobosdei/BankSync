@@ -1,7 +1,0 @@
-*cache*
-venv
-Dockerfile
-.dockerignore
-poetry.lock
-pyproject.toml
-*.env

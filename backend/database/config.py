@@ -10,11 +10,14 @@ from setting.config import get_settings
 
 settings = get_settings()
 
-# Create engine with statement cache disabled for pgbouncer compatibility
+# Create engine with pgbouncer/supabase pooler compatibility
 engine = create_async_engine(
     settings.database_url, 
     echo=True,
-    connect_args={"prepared_statement_cache_size": 0}
+    connect_args={
+        "prepared_statement_cache_size": 0,
+        "statement_cache_size": 0,
+    }
 )
 
 # Create session
@@ -24,4 +27,11 @@ async_session = sessionmaker(
 
 Base = declarative_base()
 
-database = Database(settings.database_url)
+# Database connection with server_settings passed via options
+database = Database(
+    settings.database_url,
+    force_rollback=False,
+    min_size=1,
+    max_size=5,
+    server_settings={"jit": "off"}
+)

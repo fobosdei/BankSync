@@ -30,7 +30,7 @@ Click image to watch demo video on YouTube ☝️
 - OAuth2 authentication with JWT tokens
 - Store refresh token in `httpOnly` cookie, access token in memory ( Pinia store )
 - Vue3 frontend with Pinia store
-- Docker Compose for development and production
+- Conciliaciones bancarias con IA (OpenAI)
 
 ## Project Structure & Details
 ### Backend
@@ -47,9 +47,9 @@ Click image to watch demo video on YouTube ☝️
 - `/schemas`  Pydantic schemas
 
 ### Database
-- `PostgreSQL 15.1` image from Docker Hub
-- exposed on port `5432`
-- volume `postgres_data` for persistent data
+- PostgreSQL en Supabase
+- Conexión remota segura
+- Gestión de usuarios y autenticación
 
 ### Frontend
 - `Vite`  Frontend build tool
@@ -63,35 +63,23 @@ Click image to watch demo video on YouTube ☝️
         - use `import.meta.env.VITE_APP_API_URL` to load API url from `.env` file
 
 ## Environment Variables
-- `.env`  for postgres database
-    - `POSTGRES_USER`
-    - `POSTGRES_PASSWORD`
-    - `POSTGRES_DB`
 - `backend/.env`  for backend
-    - `PORT`
-    - `RELOAD`
-    - `DATABASE_URL`  **Should be same as above setting dot file**
-    - `JWT_ALGORITHM`
+    - `DATABASE_URL`  Supabase connection string
     - `ACCESS_TOKEN_SECRET`
     - `REFRESH_TOKEN_SECRET`
     - `ACCESS_TOKEN_EXPIRE_MINUTES`
     - `REFRESH_TOKEN_EXPIRE_MINUTES`
-
-- `nginx/nginx.conf`  for nginx server
-    - **Note :** backend hostname should be same as `docker-compose.yml` service name
+    - `OPENAI_API_KEY`  for conciliaciones bancarias
 - `frontend/.env`  for development API url
 - `frontend/.env.production`  for production API url
     
 
 ## Deployment
 
-### Containerization
-- `docker-compose.yml`  Docker Compose configuration file
-- `Dockerfile`  Dockerfile for frontend nginx server with production build
-- `backend/Dockerfile`  Dockerfile for backend with hot reload
-
 ### Production
-- `docker-compose up -d --build`
+- Backend: Deploy FastAPI to services like Railway, Render, or Heroku
+- Frontend: Deploy to Vercel, Netlify, or similar
+- Database: Supabase (already cloud-hosted)
 
 ## 📦 Instalación y Configuración
 
@@ -172,11 +160,6 @@ REFRESH_TOKEN_EXPIRE_MINUTES=10080
 VITE_APP_API_URL=http://localhost:5001/api
 ```
 
-### Advanced : Kubernetes
-
-```
-Still working on it on features/k8s branch !
-```
 
 ## Issues & PR
 Feel free to open an issue !

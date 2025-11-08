@@ -10,15 +10,15 @@ from setting.config import get_settings
 settings = get_settings()
 
 
-async def validate_user(username: str, password: str):
+async def validate_user(email: str, password: str):
     async with async_session() as session:
         async with session.begin():
             db = UserCRUD(session)
-            user = await db.get_user_by_username(username=username)
+            user = await db.get_user_by_email(email=email)
             if not user:
                 return False
 
-            if not verify_password(password, user.password):
+            if not verify_password(password, user.password_hash):
                 return False
             return user
 
@@ -35,8 +35,8 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
             settings.access_token_secret,
             algorithms=["HS256"],
         )
-        username: str = payload.get("username")
-        if username is None:
+        email: str = payload.get("email")
+        if email is None:
             raise credentials_exception
 
     except Exception as e:
@@ -46,7 +46,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     async with async_session() as session:
         async with session.begin():
             db = UserCRUD(session)
-            user = await db.get_user_by_username(username=username)
+            user = await db.get_user_by_email(email=email)
             if user is None:
                 raise credentials_exception
             return user

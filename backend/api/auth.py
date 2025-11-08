@@ -21,18 +21,18 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: UserCRUD = Depends(get_user_crud),
 ):
-    user = await validate_user(form_data.username, form_data.password)
+    user = await validate_user(form_data.username, form_data.password)  # OAuth2 uses 'username' field but we treat it as email
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = await create_access_token(data={"username": form_data.username})
-    refresh_token = await create_refresh_token(data={"username": form_data.username})
+    access_token = await create_access_token(data={"email": user.email})
+    refresh_token = await create_refresh_token(data={"email": user.email})
 
-    await db.update_user_login(username=form_data.username)
+    await db.update_user_login(email=user.email)
     expired_time = (
         int(datetime.now(tz=timezone.utc).timestamp() * 1000)
         + timedelta(minutes=settings.access_token_expire_minutes).seconds * 1000
@@ -76,18 +76,18 @@ async def refresh(
             algorithms=["HS256"],
         )
 
-        username: str = payload.get("username")
-        if username is None:
+        email: str = payload.get("email")
+        if email is None:
             raise credentials_exception
 
     except Exception as e:
         credentials_exception.detail = str(e)
         raise credentials_exception
 
-    access_token = await create_access_token(data={"username": username})
-    refresh_token = await create_refresh_token(data={"username": username})
+    access_token = await create_access_token(data={"email": email})
+    refresh_token = await create_refresh_token(data={"email": email})
 
-    db.update_user_login(username)
+    await db.update_user_login(email)
     expired_time = (
         int(datetime.now(tz=timezone.utc).timestamp() * 1000)
         + timedelta(minutes=settings.access_token_expire_minutes).seconds * 1000

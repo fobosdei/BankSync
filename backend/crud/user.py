@@ -15,53 +15,55 @@ class UserCRUD:
     def __init__(self, db_session: AsyncSession = None):
         self.db_session = db_session
 
-    async def get_user_by_username(self, username: str):
-        stmt = select(UserModels).where(UserModels.username == username)
+    async def get_user_by_email(self, email: str):
+        stmt = select(UserModels).where(UserModels.email == email)
         result = await self.db_session.execute(stmt)
         user = result.scalars().first()
         return user
 
-    async def get_users(self) -> List[user_schema.Base]:
+    async def get_users(self) -> List[user_schema.UserResponse]:
         stmt = select(UserModels)
         result = await self.db_session.execute(stmt)
         users = result.scalars().all()
         return users
 
-    async def create_user(self, user: user_schema.Register) -> user_schema.Base:
-        db_user = UserModels(
-            username=user.username,
-            password=get_password_hash(user.password),
-            birthday=user.birthday,
-        )
+    async def create_user(self, user: user_schema.UserRegister) -> UserModels:
+        db_user = UserModels()
+        db_user.email = user.email
+        db_user.password_hash = get_password_hash(user.password)
+        db_user.full_name = user.full_name
+        db_user.role = user.role
+        
         self.db_session.add(db_user)
         await self.db_session.flush()
+        await self.db_session.refresh(db_user)
         return db_user
 
-    async def update_user_login(self, username: str):
-        db_user = await self.get_user_by_username(username)
+    async def update_user_login(self, email: str):
+        db_user = await self.get_user_by_email(email)
         db_user.last_login = datetime.utcnow()
         await self.db_session.refresh(db_user)
         return db_user
 
-    async def update_birthday(self, username: str, birthday: datetime):
+    async def update_user(self, email: str, user_update: user_schema.UserUpdate):
         stmt = (
             update(UserModels)
-            .where(UserModels.username == username)
-            .values(birthday=birthday)
+            .where(UserModels.email == email)
+            .values(**user_update.model_dump(exclude_unset=True))
         )
         stmt.execution_options(synchronize_session="fetch")
         await self.db_session.execute(stmt)
 
-    async def update_password(self, username: str, password: str):
+    async def update_password(self, email: str, password: str):
         stmt = (
             update(UserModels)
-            .where(UserModels.username == username)
-            .values(password=get_password_hash(password))
+            .where(UserModels.email == email)
+            .values(password_hash=get_password_hash(password))
         )
         stmt.execution_options(synchronize_session="fetch")
         await self.db_session.execute(stmt)
 
-    async def delete_user(self, username: str):
-        stmt = delete(UserModels).where(UserModels.username == username)
+    async def delete_user(self, email: str):
+        stmt = delete(UserModels).where(UserModels.email == email)
         stmt.execution_options(synchronize_session="fetch")
         await self.db_session.execute(stmt)

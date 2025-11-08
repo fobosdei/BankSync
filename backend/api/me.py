@@ -10,34 +10,33 @@ router = APIRouter(prefix="/me", tags=["me"])
 
 @router.delete("")
 async def delete_user(
-    current_user: user_schema.Base = Depends(get_current_user),
+    current_user: user_schema.UserResponse = Depends(get_current_user),
     db: UserCRUD = Depends(get_user_crud),
 ):
-    return await db.delete_user(username=current_user.username)
+    await db.delete_user(email=current_user.email)
+    return {"message": "User deleted successfully"}
 
 
 @router.put("/password")
 async def update_password(
-    request: user_schema.Password,
-    current_user: user_schema.Base = Depends(get_current_user),
+    request: user_schema.PasswordUpdate,
+    current_user: user_schema.UserResponse = Depends(get_current_user),
     db: UserCRUD = Depends(get_user_crud),
 ):
-    return await db.update_password(
-        username=current_user.username, password=request.password
-    )
+    await db.update_password(email=current_user.email, password=request.password)
+    return {"message": "Password updated successfully"}
 
 
-@router.put("/birthday")
-async def update_birthday(
-    request: user_schema.Birthday,
-    current_user: user_schema.Base = Depends(get_current_user),
+@router.put("/profile")
+async def update_profile(
+    request: user_schema.UserUpdate,
+    current_user: user_schema.UserResponse = Depends(get_current_user),
     db: UserCRUD = Depends(get_user_crud),
 ):
-    return await db.update_birthday(
-        username=current_user.username, birthday=request.birthday
-    )
+    await db.update_user(email=current_user.email, user_update=request)
+    return {"message": "Profile updated successfully"}
 
 
-@router.get("", response_model=user_schema.Base)
-async def protected(current_user: user_schema.Base = Depends(get_current_user)):
+@router.get("", response_model=user_schema.UserResponse)
+async def get_me(current_user: user_schema.UserResponse = Depends(get_current_user)):
     return current_user

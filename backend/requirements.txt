@@ -10,6 +10,12 @@ bcrypt==4.0.1
 passlib==1.7.4
 python-jose==3.3.0
 
+# Conciliación bancaria
+openai==1.54.0
+PyPDF2==3.0.1
+pandas==2.3.3
+openpyxl==3.1.2
+
 # alembic==1.11.3
 # annotated-types==0.5.0
 # anyio==3.7.1

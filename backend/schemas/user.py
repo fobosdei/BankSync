@@ -1,22 +1,38 @@
-from datetime import date
+from datetime import datetime
+from typing import Optional
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
-# User Schema
-
-
-class Base(BaseModel):
-    username: str
-    birthday: date
+# User Schema matching Supabase structure
 
 
-class Register(Base):
+class UserBase(BaseModel):
+    email: EmailStr
+    full_name: Optional[str] = None
+    role: Optional[str] = "user"
+
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: Optional[str] = None
+    role: Optional[str] = "user"
+
+
+class UserResponse(UserBase):
+    id: UUID
+    created_at: datetime
+    last_login: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class PasswordUpdate(BaseModel):
     password: str
 
 
-class Password(BaseModel):
-    password: str
-
-
-class Birthday(BaseModel):
-    birthday: date
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[str] = None

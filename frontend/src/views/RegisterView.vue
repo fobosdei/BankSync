@@ -24,8 +24,29 @@
                 <!-- Form -->
                 <form @submit.prevent="submit" class="space-y-4">
                     <div class="space-y-2">
-                        <label for="usernameField" class="block text-sm font-medium text-gray-700">
-                            Nombre de usuario
+                        <label for="emailField" class="block text-sm font-medium text-gray-700">
+                            Correo electrónico
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <input 
+                                v-model="form.email" 
+                                type="email" 
+                                id="emailField"
+                                class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-gray-900"
+                                placeholder="tu@email.com"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label for="fullNameField" class="block text-sm font-medium text-gray-700">
+                            Nombre completo
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -34,12 +55,11 @@
                                 </svg>
                             </div>
                             <input 
-                                v-model="form.username" 
+                                v-model="form.full_name" 
                                 type="text" 
-                                id="usernameField"
+                                id="fullNameField"
                                 class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-gray-900"
-                                placeholder="Tu nombre de usuario"
-                                required
+                                placeholder="Tu nombre completo"
                             >
                         </div>
                     </div>
@@ -60,26 +80,6 @@
                                 id="passwordField"
                                 class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-gray-900"
                                 placeholder="••••••••"
-                                required
-                            >
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label for="birthdayField" class="block text-sm font-medium text-gray-700">
-                            Fecha de nacimiento
-                        </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <input 
-                                v-model="form.birthday" 
-                                type="date" 
-                                id="birthdayField"
-                                class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-gray-900"
                                 required
                             >
                         </div>
@@ -145,7 +145,7 @@
 
                 <!-- Copyright -->
                 <div class="text-center pt-4 border-t border-gray-100">
-                    <p class="text-xs text-gray-500">© 2025 BankSync. Todos los derechos reservados.</p>
+                    <p class="text-xs text-gray-500"> 2025 BankSync. Todos los derechos reservados.</p>
                 </div>
             </div>
         </div>
@@ -157,9 +157,10 @@ import { ref } from 'vue';
 import { registerUser } from '../store/user';
 
 const form = ref({
-    username: '',
+    email: '',
     password: '',
-    birthday: '',
+    full_name: '',
+    role: 'user'
 });
 
 const submit = async (e) => {
