@@ -7,7 +7,9 @@ from setting.config import get_settings
 
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+#  CAMBIAR a argon2 - más moderno, seguro y sin límite de 72 caracteres
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
@@ -16,6 +18,7 @@ def verify_password(plain_password, hashed_password):
 
 
 def get_password_hash(password):
+    #  ARGON2 NO TIENE LÍMITE DE 72 CARACTERES - SIN NECESIDAD DE TRUNCAR
     return pwd_context.hash(password)
 
 
