@@ -11,14 +11,14 @@ class ConciliationService:
         """Procesar archivo Excel del ERP y convertirlo a transacciones"""
         try:
             df = pd.read_excel(excel_path)
-            print(f"📊 Columnas del Excel: {df.columns.tolist()}")
-            print(f"📊 Primeras filas:\n{df.head()}")
+            print(f" Columnas del Excel: {df.columns.tolist()}")
+            print(f" Primeras filas:\n{df.head()}")
             
             transacciones = []
             
             # Mapeo DIRECTO usando los nombres reales de columnas
             for i, row in df.iterrows():
-                print(f"🔍 Procesando fila {i}: {dict(row)}")
+                print(f" Procesando fila {i}: {dict(row)}")
                 
                 # Usar los nombres reales de columnas que vimos en el log
                 fecha = row['Fecha'] if 'Fecha' in row else ""
@@ -46,17 +46,17 @@ class ConciliationService:
                         "referencia": f"EXCEL_{i}"
                     }
                     transacciones.append(transaction)
-                    print(f"   ✅ Transacción agregada: {transaction}")
+                    print(f"   Transacción agregada: {transaction}")
                     
                 except (ValueError, TypeError) as e:
-                    print(f"   ⚠️  Error procesando fila {i}: {e}")
+                    print(f"    Error procesando fila {i}: {e}")
                     continue
             
-            print(f"📈 Total transacciones procesadas del Excel: {len(transacciones)}")
+            print(f" Total transacciones procesadas del Excel: {len(transacciones)}")
             return transacciones
             
         except Exception as e:
-            print(f"❌ Error procesando Excel: {str(e)}")
+            print(f" Error procesando Excel: {str(e)}")
             raise Exception(f"Error procesando Excel: {str(e)}")
     
     def _normalizar_fecha_excel(self, fecha_raw):
@@ -92,13 +92,13 @@ class ConciliationService:
             return str(fecha_raw)
             
         except Exception as e:
-            print(f"⚠️  Error normalizando fecha Excel {fecha_raw}: {e}")
+            print(f"  Error normalizando fecha Excel {fecha_raw}: {e}")
             return str(fecha_raw)
     
     def conciliar(self, transacciones_pdf: List[Dict], transacciones_excel: List[Dict]) -> Dict:
         """Realizar la conciliación entre ambas fuentes"""
         
-        print(f"🔄 Iniciando conciliación...")
+        print(f" Iniciando conciliación...")
         print(f"   PDF: {len(transacciones_pdf)} transacciones")
         print(f"   Excel: {len(transacciones_excel)} transacciones")
         
@@ -128,7 +128,7 @@ class ConciliationService:
             "created_at": datetime.now().isoformat()
         }
         
-        print(f"✅ Conciliación completada:")
+        print(f"Conciliación completada:")
         print(f"   Coincidencias: {len(matches)}")
         print(f"   Sin match PDF: {len(unmatched_pdf)}")
         print(f"   Sin match Excel: {len(unmatched_excel)}")
@@ -175,10 +175,10 @@ class ConciliationService:
                 }
                 estandar.append(transaction)
                 
-                print(f"✅ Transacción PDF {i}: {descripcion} → {tipo} (${monto_float})")
+                print(f" Transacción PDF {i}: {descripcion} → {tipo} (${monto_float})")
                 
             except Exception as e:
-                print(f"⚠️  Error convirtiendo transacción PDF {i}: {e}")
+                print(f"  Error convirtiendo transacción PDF {i}: {e}")
                 print(f"   Transacción original: {trans}")
                 continue
         
@@ -197,7 +197,7 @@ class ConciliationService:
         for trans_pdf in pdf_trans[:]:
             for trans_excel in excel_trans[:]:
                 if self._es_coincidencia(trans_pdf, trans_excel):
-                    print(f"   ✅ MATCH: {trans_pdf['descripcion']} (${trans_pdf['monto']}) ↔ {trans_excel['descripcion']} (${trans_excel['monto']})")
+                    print(f"    MATCH: {trans_pdf['descripcion']} (${trans_pdf['monto']}) ↔ {trans_excel['descripcion']} (${trans_excel['monto']})")
                     
                     match_info = {
                         "pdf_transaction": trans_pdf,
@@ -214,7 +214,7 @@ class ConciliationService:
                             "difference": abs(trans_pdf['monto'] - trans_excel['monto'])
                         }
                         discrepancies.append(discrepancy)
-                        print(f"   ⚠️  DISCREPANCIA: {discrepancy['issue']}")
+                        print(f"     DISCREPANCIA: {discrepancy['issue']}")
                     
                     matches.append(match_info)
                     if trans_pdf in unmatched_pdf:
@@ -223,8 +223,8 @@ class ConciliationService:
                         unmatched_excel.remove(trans_excel)
                     break
         
-        print(f"   ❌ Sin match PDF: {[t['descripcion'] for t in unmatched_pdf]}")
-        print(f"   ❌ Sin match Excel: {[t['descripcion'] for t in unmatched_excel]}")
+        print(f"    Sin match PDF: {[t['descripcion'] for t in unmatched_pdf]}")
+        print(f"    Sin match Excel: {[t['descripcion'] for t in unmatched_excel]}")
         
         return matches, discrepancies, unmatched_pdf, unmatched_excel
     
@@ -234,7 +234,7 @@ class ConciliationService:
         coincidencia_monto = abs(trans1['monto'] - trans2['monto']) < 0.05  # 5 centavos tolerancia
         coincidencia_fecha = trans1['fecha'] == trans2['fecha']  # Ahora las fechas están normalizadas
         
-        print(f"   🔍 Comparando: {trans1['descripcion']} ({trans1['fecha']}) vs {trans2['descripcion']} ({trans2['fecha']})")
+        print(f"    Comparando: {trans1['descripcion']} ({trans1['fecha']}) vs {trans2['descripcion']} ({trans2['fecha']})")
         print(f"      Monto: {trans1['monto']} vs {trans2['monto']} → {coincidencia_monto}")
         print(f"      Fecha: {trans1['fecha']} vs {trans2['fecha']} → {coincidencia_fecha}")
         
