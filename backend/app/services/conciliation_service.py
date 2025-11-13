@@ -11,78 +11,96 @@ class ConciliationService:
         """Procesar archivo Excel del ERP y convertirlo a transacciones"""
         try:
             df = pd.read_excel(excel_path)
+            print(f"📊 Columnas del Excel: {df.columns.tolist()}")
+            print(f"📊 Primeras filas:\n{df.head()}")
+            
             transacciones = []
             
-            # Mapeo flexible de columnas
-            for _, row in df.iterrows():
-                # Buscar columnas comunes
-                fecha = self._buscar_valor(row, ['fecha', 'date', 'fecha_transaccion'])
-                descripcion = self._buscar_valor(row, ['descripcion', 'concepto', 'detalle', 'description'])
-                monto = self._buscar_valor(row, ['monto', 'valor', 'importe', 'amount'])
-                referencia = self._buscar_valor(row, ['referencia', 'ref', 'numero', 'id'])
+            # Mapeo DIRECTO usando los nombres reales de columnas
+            for i, row in df.iterrows():
+                print(f"🔍 Procesando fila {i}: {dict(row)}")
+                
+                # Usar los nombres reales de columnas que vimos en el log
+                fecha = row['Fecha'] if 'Fecha' in row else ""
+                descripcion = row['Descripción'] if 'Descripción' in row else ""
+                monto = row['Valor'] if 'Valor' in row else ""
+                
+                print(f"   → Fecha cruda: {fecha} (tipo: {type(fecha)})")
+                print(f"   → Descripción: {descripcion}")
+                print(f"   → Monto: {monto}")
                 
                 # Determinar tipo basado en el monto
                 try:
-                    monto_float = float(monto) if monto else 0.0
+                    monto_float = float(monto) if monto and str(monto).strip() else 0.0
                     tipo = "ingreso" if monto_float >= 0 else "gasto"
                     
                     # NORMALIZAR FECHA - Convertir al mismo formato que el PDF
                     fecha_normalizada = self._normalizar_fecha_excel(fecha)
+                    print(f"   → Fecha normalizada: {fecha_normalizada}")
                     
                     transaction = {
-                        "fecha": fecha_normalizada,  # Usar fecha normalizada
-                        "descripcion": str(descripcion),
+                        "fecha": fecha_normalizada,
+                        "descripcion": str(descripcion) if descripcion else "",
                         "monto": abs(monto_float),
                         "tipo": tipo,
-                        "referencia": str(referencia) if referencia else None
+                        "referencia": f"EXCEL_{i}"
                     }
                     transacciones.append(transaction)
-                except ValueError:
+                    print(f"   ✅ Transacción agregada: {transaction}")
+                    
+                except (ValueError, TypeError) as e:
+                    print(f"   ⚠️  Error procesando fila {i}: {e}")
                     continue
             
+            print(f"📈 Total transacciones procesadas del Excel: {len(transacciones)}")
             return transacciones
             
         except Exception as e:
+            print(f"❌ Error procesando Excel: {str(e)}")
             raise Exception(f"Error procesando Excel: {str(e)}")
     
     def _normalizar_fecha_excel(self, fecha_raw):
         """Normalizar fecha del Excel al formato YYYY-MM-DD"""
         try:
-            # Si es string, limpiarlo
-            if isinstance(fecha_raw, str):
-                # Extraer solo la parte de la fecha (antes del espacio si tiene hora)
-                fecha_parte = fecha_raw.split(' ')[0]
-                # Convertir a datetime
-                fecha_dt = pd.to_datetime(fecha_parte, errors='coerce')
-                if pd.isna(fecha_dt):
-                    return str(fecha_raw)
-                return fecha_dt.strftime('%Y-%m-%d')
+            print(f"🔧 Normalizando fecha Excel: {fecha_raw} (tipo: {type(fecha_raw)})")
             
-            # Si es datetime de pandas o Python
-            elif hasattr(fecha_raw, 'strftime'):
+            # Si ya es Timestamp de pandas (caso más común)
+            if hasattr(fecha_raw, 'strftime'):
                 return fecha_raw.strftime('%Y-%m-%d')
             
-            # Si es numpy datetime64
-            elif 'datetime64' in str(type(fecha_raw)):
-                return pd.to_datetime(fecha_raw).strftime('%Y-%m-%d')
+            # Si es string con formato DD/MM/YYYY
+            if isinstance(fecha_raw, str) and '/' in fecha_raw:
+                partes = fecha_raw.split('/')
+                if len(partes) == 3:
+                    dia, mes, anio = partes
+                    # Convertir a YYYY-MM-DD
+                    return f"{anio}-{mes.zfill(2)}-{dia.zfill(2)}"
             
-            # Por defecto, convertir a string
-            else:
-                return str(fecha_raw)
-                
-        except Exception as e:
-            print(f"⚠️  Error normalizando fecha {fecha_raw}: {e}")
+            # Si es string con formato DD-MM-YYYY
+            if isinstance(fecha_raw, str) and '-' in fecha_raw:
+                partes = fecha_raw.split('-')
+                if len(partes) == 3:
+                    dia, mes, anio = partes
+                    # Convertir a YYYY-MM-DD
+                    return f"{anio}-{mes.zfill(2)}-{dia.zfill(2)}"
+            
+            # Por defecto, usar pandas para conversión (con dayfirst=True para DD/MM/YYYY)
+            fecha_dt = pd.to_datetime(fecha_raw, errors='coerce', dayfirst=True)
+            if not pd.isna(fecha_dt):
+                return fecha_dt.strftime('%Y-%m-%d')
+            
             return str(fecha_raw)
-    
-    def _buscar_valor(self, row, posibles_nombres):
-        """Buscar valor en una fila por posibles nombres de columna"""
-        for nombre in posibles_nombres:
-            if nombre in row:
-                return row[nombre]
-        return ""
+            
+        except Exception as e:
+            print(f"⚠️  Error normalizando fecha Excel {fecha_raw}: {e}")
+            return str(fecha_raw)
     
     def conciliar(self, transacciones_pdf: List[Dict], transacciones_excel: List[Dict]) -> Dict:
         """Realizar la conciliación entre ambas fuentes"""
+        
+        print(f"🔄 Iniciando conciliación...")
+        print(f"   PDF: {len(transacciones_pdf)} transacciones")
+        print(f"   Excel: {len(transacciones_excel)} transacciones")
         
         # Convertir transacciones PDF al formato estándar
         pdf_standard = self._convertir_a_estandar(transacciones_pdf)
@@ -109,6 +127,11 @@ class ConciliationService:
             "summary": summary,
             "created_at": datetime.now().isoformat()
         }
+        
+        print(f"✅ Conciliación completada:")
+        print(f"   Coincidencias: {len(matches)}")
+        print(f"   Sin match PDF: {len(unmatched_pdf)}")
+        print(f"   Sin match Excel: {len(unmatched_excel)}")
         
         return resultado
     
@@ -144,7 +167,7 @@ class ConciliationService:
                     tipo = "gasto"  # Por defecto asumir gasto si no está claro
                 
                 transaction = {
-                    "fecha": str(fecha),
+                    "fecha": str(fecha),  # OpenAI ya devuelve YYYY-MM-DD
                     "descripcion": trans.get('descripcion', ''),  # Original en mayúsculas
                     "monto": monto_float,
                     "tipo": tipo,
@@ -152,10 +175,10 @@ class ConciliationService:
                 }
                 estandar.append(transaction)
                 
-                print(f"✅ Transacción {i}: {descripcion} → {tipo} (${monto_float})")
+                print(f"✅ Transacción PDF {i}: {descripcion} → {tipo} (${monto_float})")
                 
             except Exception as e:
-                print(f"⚠️  Error convirtiendo transacción {i}: {e}")
+                print(f"⚠️  Error convirtiendo transacción PDF {i}: {e}")
                 print(f"   Transacción original: {trans}")
                 continue
         
@@ -168,10 +191,14 @@ class ConciliationService:
         unmatched_pdf = pdf_trans.copy()
         unmatched_excel = excel_trans.copy()
         
+        print(f"🔍 Buscando coincidencias...")
+        
         # Algoritmo de matching por monto y fecha
         for trans_pdf in pdf_trans[:]:
             for trans_excel in excel_trans[:]:
                 if self._es_coincidencia(trans_pdf, trans_excel):
+                    print(f"   ✅ MATCH: {trans_pdf['descripcion']} (${trans_pdf['monto']}) ↔ {trans_excel['descripcion']} (${trans_excel['monto']})")
+                    
                     match_info = {
                         "pdf_transaction": trans_pdf,
                         "excel_transaction": trans_excel,
@@ -187,6 +214,7 @@ class ConciliationService:
                             "difference": abs(trans_pdf['monto'] - trans_excel['monto'])
                         }
                         discrepancies.append(discrepancy)
+                        print(f"   ⚠️  DISCREPANCIA: {discrepancy['issue']}")
                     
                     matches.append(match_info)
                     if trans_pdf in unmatched_pdf:
@@ -195,6 +223,9 @@ class ConciliationService:
                         unmatched_excel.remove(trans_excel)
                     break
         
+        print(f"   ❌ Sin match PDF: {[t['descripcion'] for t in unmatched_pdf]}")
+        print(f"   ❌ Sin match Excel: {[t['descripcion'] for t in unmatched_excel]}")
+        
         return matches, discrepancies, unmatched_pdf, unmatched_excel
     
     def _es_coincidencia(self, trans1: Dict, trans2: Dict) -> bool:
@@ -202,6 +233,10 @@ class ConciliationService:
         # Coincidencia por monto (con tolerancia) y fecha
         coincidencia_monto = abs(trans1['monto'] - trans2['monto']) < 0.05  # 5 centavos tolerancia
         coincidencia_fecha = trans1['fecha'] == trans2['fecha']  # Ahora las fechas están normalizadas
+        
+        print(f"   🔍 Comparando: {trans1['descripcion']} ({trans1['fecha']}) vs {trans2['descripcion']} ({trans2['fecha']})")
+        print(f"      Monto: {trans1['monto']} vs {trans2['monto']} → {coincidencia_monto}")
+        print(f"      Fecha: {trans1['fecha']} vs {trans2['fecha']} → {coincidencia_fecha}")
         
         return coincidencia_monto and coincidencia_fecha
     
