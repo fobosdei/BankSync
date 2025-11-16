@@ -30,11 +30,19 @@
             <!-- Filters -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="relative">
-                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button
+                        type="button"
+                        class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 flex items-center justify-center focus:outline-none"
+                        @click="focusSearch"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <input 
-                        type="text" 
+                        </svg>
+                    </button>
+                    <input
+                        ref="searchInput"
+                        v-model="searchQuery"
+                        type="text"
                         placeholder="Buscar por descripción o referencia..."
                         class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
@@ -390,6 +398,7 @@ const excelFile = ref(null);
 const lastReconciliation = ref(null);
 
 // Filtros y búsqueda
+const searchQuery = ref('');
 const statusFilter = ref('');
 const accountFilter = ref('');
 const confidenceFilter = ref('');
@@ -401,13 +410,17 @@ const selectedTransaction = ref(null);
 // Stats computed from results
 const filteredTransactions = computed(() => {
     return transactions.value.filter((t) => {
+        const matchSearch =
+            !searchQuery.value ||
+            t.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+            (t.reference && t.reference.toLowerCase().includes(searchQuery.value.toLowerCase()));
         const matchStatus = !statusFilter.value || t.status === statusFilter.value;
         const matchAccount = !accountFilter.value || t.account === accountFilter.value;
         let matchConfidence = true;
         if (confidenceFilter.value === 'alta') matchConfidence = t.confidence >= 90;
         if (confidenceFilter.value === 'media') matchConfidence = t.confidence >= 50 && t.confidence < 90;
         if (confidenceFilter.value === 'baja') matchConfidence = t.confidence < 50;
-        return matchStatus && matchAccount && matchConfidence;
+        return matchSearch && matchStatus && matchAccount && matchConfidence;
     });
 });
 
@@ -714,6 +727,12 @@ const getConfidenceColor = (confidence) => {
     if (confidence >= 90) return 'bg-green-600';
     if (confidence >= 50) return 'bg-orange-500';
     return 'bg-gray-400';
+};
+
+const focusSearch = () => {
+    if (searchInput.value) {
+        searchInput.value.focus();
+    }
 };
 
 const openTransactionDetails = (transaction) => {
