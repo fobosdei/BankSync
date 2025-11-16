@@ -2,6 +2,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.conciliation import (
@@ -126,4 +127,66 @@ class ConciliationCRUD:
         await self.db_session.flush()
 
         return reconciliation
+
+    async def list_recent_reconciliations(
+        self, limit: int = 20
+    ) -> List[ReconciliationModel]:
+        """
+        Obtener las conciliaciones más recientes para mostrarlas en historial/reportes.
+        """
+        stmt = (
+            select(ReconciliationModel)
+            .order_by(ReconciliationModel.created_at.desc())
+            .limit(limit)
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().all()
+
+    async def get_dashboard_summary(self) -> Dict[str, Any]:
+        """
+        Construir un resumen simple para el dashboard a partir de las conciliaciones.
+        Usa los campos agregados del JSON `summary` para no recalcular todo.
+        """
+        stmt = select(ReconciliationModel.summary)
+        result = await self.db_session.execute(stmt)
+        summaries = [row or {} for row in result.scalars().all()]
+
+        if not summaries:
+            return {
+                "total_conciliaciones": 0,
+                "promedio_porcentaje_conciliado": 0.0,
+                "total_transacciones_pdf": 0,
+                "total_transacciones_excel": 0,
+                "total_discrepancias": 0,
+                "total_pendientes_pdf": 0,
+                "total_pendientes_erp": 0,
+            }
+
+        total_conciliaciones = len(summaries)
+        sum_porcentaje = 0.0
+        total_pdf = 0
+        total_excel = 0
+        total_discrepancias = 0
+        total_pendientes_pdf = 0
+        total_pendientes_erp = 0
+
+        for s in summaries:
+            sum_porcentaje += float(s.get("porcentaje_conciliado", 0) or 0)
+            total_pdf += int(s.get("total_transacciones_pdf", 0) or 0)
+            total_excel += int(s.get("total_transacciones_excel", 0) or 0)
+            total_discrepancias += int(s.get("discrepancies", 0) or 0)
+            total_pendientes_pdf += int(s.get("transacciones_sin_match_pdf", 0) or 0)
+            total_pendientes_erp += int(s.get("transacciones_sin_match_excel", 0) or 0)
+
+        promedio_porcentaje = sum_porcentaje / total_conciliaciones
+
+        return {
+            "total_conciliaciones": total_conciliaciones,
+            "promedio_porcentaje_conciliado": promedio_porcentaje,
+            "total_transacciones_pdf": total_pdf,
+            "total_transacciones_excel": total_excel,
+            "total_discrepancias": total_discrepancias,
+            "total_pendientes_pdf": total_pendientes_pdf,
+            "total_pendientes_erp": total_pendientes_erp,
+        }
 

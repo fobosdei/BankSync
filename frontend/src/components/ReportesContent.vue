@@ -192,7 +192,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { apiGetHistorial } from '@/api/conciliation';
 
 const activeTab = ref('reportes');
 
@@ -202,16 +203,60 @@ const tabs = ref([
     { id: 'estadisticas', name: 'Estadísticas' }
 ]);
 
-const reports = ref([
-    { id: 1, name: 'Conciliaciones Octubre 2025', type: 'Mensual', period: 'Octubre 2025', date: '2025-10-13', records: 847, reconciled: 738, status: 'Completado' },
-    { id: 2, name: 'Transacciones no conciliadas Q3', type: 'Trimestral', period: 'Q3 2025', date: '2025-10-01', records: 124, reconciled: 0, status: 'Completado' },
-    { id: 3, name: 'Ajustes contables Septiembre', type: 'Ajustes', period: 'Septiembre 2025', date: '2025-09-30', records: 23, reconciled: 23, status: 'Completado' },
-    { id: 4, name: 'Auditoría anual 2024', type: 'Auditoría', period: 'Año 2024', date: '2025-01-15', records: 9847, reconciled: 9734, status: 'Completado' }
-]);
+const loading = ref(false);
+const error = ref(null);
+const reports = ref([]);
 
 const templates = ref([
     { id: 1, name: 'Conciliación Mensual', description: 'Resumen completo de conciliaciones del mes', color: 'bg-blue-600' },
     { id: 2, name: 'Transacciones Pendientes', description: 'Lista de transacciones sin conciliar', color: 'bg-green-600' },
     { id: 3, name: 'Ajustes Contables', description: 'Asientos de ajuste generados', color: 'bg-purple-600' }
 ]);
+
+const mapHistorialToReports = (items) => {
+    return items.map((item) => {
+        const summary = item.summary || {};
+        const total =
+            (summary.total_transacciones_pdf || 0) +
+            (summary.total_transacciones_excel || 0);
+        const conciliadas = summary.coincidencias_encontradas || 0;
+
+        const created = item.created_at ? new Date(item.created_at) : null;
+        const dateStr = created
+            ? created.toISOString().slice(0, 10)
+            : '';
+
+        const periodStr = created
+            ? created.toLocaleDateString('es-CO', {
+                  year: 'numeric',
+                  month: 'long'
+              })
+            : 'N/A';
+
+        return {
+            id: item.id,
+            name: item.name,
+            type: 'Conciliación',
+            period: periodStr,
+            date: dateStr,
+            records: total,
+            reconciled: conciliadas,
+            status: item.status || 'Completado'
+        };
+    });
+};
+
+onMounted(async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+        const { data } = await apiGetHistorial();
+        reports.value = mapHistorialToReports(data);
+    } catch (e) {
+        console.error('Error cargando historial de conciliaciones:', e);
+        error.value = 'No se pudieron cargar los reportes';
+    } finally {
+        loading.value = false;
+    }
+});
 </script>

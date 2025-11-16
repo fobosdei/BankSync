@@ -8,7 +8,11 @@
                     <p class="text-sm text-gray-600 mt-1">Gestiona y revisa las conciliaciones entre extractos bancarios y registros contables</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <button
+                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                        @click="exportarUltimaConciliacion"
+                        :disabled="!conciliationResult && !lastReconciliation"
+                    >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
@@ -35,27 +39,55 @@
                         class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                 </div>
-                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option>Estado</option>
-                    <option>Conciliado</option>
-                    <option>Pendiente</option>
-                    <option>Revisar</option>
+                <select v-model="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Estado</option>
+                    <option value="Conciliado">Conciliado</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Revisar">Revisar</option>
                 </select>
-                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option>Cuenta bancaria</option>
+                <select v-model="accountFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Cuenta bancaria</option>
                     <option>Banco Nacional</option>
                     <option>Banco del País</option>
+                    <option>Banco Digital</option>
+                    <option>Banco Internacional</option>
                 </select>
-                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option>Confianza IA</option>
-                    <option>Alta (&gt;90%)</option>
-                    <option>Media (50-90%)</option>
-                    <option>Baja (&lt;50%)</option>
+                <select v-model="confidenceFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Confianza IA</option>
+                    <option value="alta">Alta (&gt;90%)</option>
+                    <option value="media">Media (50-90%)</option>
+                    <option value="baja">Baja (&lt;50%)</option>
                 </select>
             </div>
         </header>
 
         <div class="p-8">
+            <!-- Resumen de la última conciliación guardada -->
+            <div v-if="lastReconciliation" class="mb-8 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Última conciliación</p>
+                    <p class="text-sm text-blue-900 font-medium">{{ lastReconciliation.name }}</p>
+                    <p class="text-xs text-blue-700">
+                        {{ new Date(lastReconciliation.created_at).toLocaleString('es-CO') }}
+                    </p>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="text-right">
+                        <p class="text-xs text-blue-700">Conciliado</p>
+                        <p class="text-xl font-bold text-blue-900">
+                            {{ Math.round(lastReconciliation.summary.porcentaje_conciliado || 0) }}%
+                        </p>
+                    </div>
+                    <div class="h-10 w-px bg-blue-200"></div>
+                    <div class="text-right">
+                        <p class="text-xs text-blue-700">Transacciones</p>
+                        <p class="text-xl font-bold text-blue-900">
+                            {{ (lastReconciliation.summary.total_transacciones_pdf || 0) + (lastReconciliation.summary.total_transacciones_excel || 0) }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
@@ -98,7 +130,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="transaction in transactions" :key="transaction.id" class="hover:bg-gray-50">
+                            <tr v-for="transaction in filteredTransactions" :key="transaction.id" class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ transaction.date }}</td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="font-medium text-gray-900">{{ transaction.description }}</div>
@@ -128,18 +160,26 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <div class="flex items-center gap-2">
-                                        <button class="text-gray-400 hover:text-gray-600">
+                                        <button class="text-gray-400 hover:text-gray-600" @click="openTransactionDetails(transaction)">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                             </svg>
                                         </button>
-                                        <button v-if="transaction.status === 'Conciliado'" class="text-green-600 hover:text-green-700">
+                                        <button
+                                            v-if="transaction.status === 'Conciliado'"
+                                            class="text-green-600 hover:text-green-700"
+                                            @click="toggleTransactionStatus(transaction)"
+                                        >
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                             </svg>
                                         </button>
-                                        <button v-else class="text-red-600 hover:text-red-700">
+                                        <button
+                                            v-else
+                                            class="text-red-600 hover:text-red-700"
+                                            @click="toggleTransactionStatus(transaction)"
+                                        >
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                             </svg>
@@ -149,6 +189,65 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de detalle de transacción -->
+        <div
+            v-if="showTransactionModal && selectedTransaction"
+            class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            @click.self="showTransactionModal = false"
+        >
+            <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Detalle de transacción</h2>
+                    <button @click="showTransactionModal = false" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-2 text-sm text-gray-800">
+                    <p><span class="font-semibold">Fecha:</span> {{ selectedTransaction.date }}</p>
+                    <p><span class="font-semibold">Descripción:</span> {{ selectedTransaction.description }}</p>
+                    <p><span class="font-semibold">Referencia:</span> {{ selectedTransaction.reference }}</p>
+                    <p><span class="font-semibold">Cuenta:</span> {{ selectedTransaction.account }}</p>
+                    <p>
+                        <span class="font-semibold">Monto banco:</span>
+                        {{ selectedTransaction.bankAmount !== null ? formatCurrency(selectedTransaction.bankAmount) : 'N/A' }}
+                    </p>
+                    <p>
+                        <span class="font-semibold">Monto contable:</span>
+                        {{
+                            selectedTransaction.accountingAmount !== null
+                                ? formatCurrency(selectedTransaction.accountingAmount)
+                                : 'N/A'
+                        }}
+                    </p>
+                    <p>
+                        <span class="font-semibold">Estado:</span>
+                        <span :class="getStatusClass(selectedTransaction.status)" class="px-2 py-1 text-xs font-medium rounded-full">
+                            {{ selectedTransaction.status }}
+                        </span>
+                    </p>
+                    <p><span class="font-semibold">Confianza IA:</span> {{ selectedTransaction.confidence }}%</p>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-2">
+                    <button
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm"
+                        @click="showTransactionModal = false"
+                    >
+                        Cerrar
+                    </button>
+                    <button
+                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+                        @click="() => { toggleTransactionStatus(selectedTransaction); showTransactionModal = false; }"
+                    >
+                        Alternar estado
+                    </button>
                 </div>
             </div>
         </div>
@@ -274,8 +373,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { apiConciliar } from '@/api/conciliation';
+import { ref, computed, onMounted } from 'vue';
+import { apiConciliar, apiGetHistorial } from '@/api/conciliation';
 
 // Modal state
 const showUploadModal = ref(false);
@@ -287,9 +386,33 @@ const conciliationResult = ref(null);
 const pdfFile = ref(null);
 const excelFile = ref(null);
 
+// Historial / última conciliación desde BD
+const lastReconciliation = ref(null);
+
+// Filtros y búsqueda
+const statusFilter = ref('');
+const accountFilter = ref('');
+const confidenceFilter = ref('');
+
+// Estado del modal de detalle
+const showTransactionModal = ref(false);
+const selectedTransaction = ref(null);
+
 // Stats computed from results
+const filteredTransactions = computed(() => {
+    return transactions.value.filter((t) => {
+        const matchStatus = !statusFilter.value || t.status === statusFilter.value;
+        const matchAccount = !accountFilter.value || t.account === accountFilter.value;
+        let matchConfidence = true;
+        if (confidenceFilter.value === 'alta') matchConfidence = t.confidence >= 90;
+        if (confidenceFilter.value === 'media') matchConfidence = t.confidence >= 50 && t.confidence < 90;
+        if (confidenceFilter.value === 'baja') matchConfidence = t.confidence < 50;
+        return matchStatus && matchAccount && matchConfidence;
+    });
+});
+
 const stats = computed(() => {
-    if (!conciliationResult.value) {
+    if (!conciliationResult.value && !lastReconciliation.value) {
         return {
             total: transactions.value.length,
             matched: transactions.value.filter(t => t.status === 'Conciliado').length,
@@ -298,8 +421,10 @@ const stats = computed(() => {
             unmatchedErp: transactions.value.filter(t => t.status === 'Revisar').length
         };
     }
-    
-    const summary = conciliationResult.value.summary;
+
+    const summary = (conciliationResult.value && conciliationResult.value.summary) ||
+        (lastReconciliation.value && lastReconciliation.value.summary) ||
+        {};
     return {
         total: summary.total_transacciones_pdf + summary.total_transacciones_excel,
         matched: summary.coincidencias_encontradas,
@@ -338,6 +463,19 @@ const handleExcelDrop = (event) => {
     }
 };
 
+// Cargar historial al montar la vista
+onMounted(async () => {
+    try {
+        const { data } = await apiGetHistorial();
+        if (data && data.length > 0) {
+            // Nos quedamos con la más reciente (viene ya ordenado desde el backend)
+            lastReconciliation.value = data[0];
+        }
+    } catch (e) {
+        console.error('Error cargando historial de conciliaciones:', e);
+    }
+});
+
 // Process conciliation
 const processConciliation = async () => {
     if (!pdfFile.value || !excelFile.value) return;
@@ -357,6 +495,13 @@ const processConciliation = async () => {
         
         const response = await apiConciliar(pdfFile.value, excelFile.value);
         conciliationResult.value = response.data;
+        if (response.data.reconciliation_id) {
+            // Después de guardar, refrescamos la última conciliación desde BD
+            const { data: historial } = await apiGetHistorial();
+            if (historial && historial.length > 0) {
+                lastReconciliation.value = historial[0];
+            }
+        }
         
         // Update transactions table with results
         updateTransactionsFromResult(response.data);
@@ -426,6 +571,26 @@ const viewResults = () => {
     closeModal();
     // Scroll to transactions table
     window.scrollTo({ top: 400, behavior: 'smooth' });
+};
+
+// Exportar (por ahora solo descarga el JSON de la última conciliación en el navegador)
+const exportarUltimaConciliacion = () => {
+    const data =
+        conciliationResult.value ||
+        (lastReconciliation.value && lastReconciliation.value.summary);
+    if (!data) return;
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'conciliacion.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 };
 
 // Close modal and reset
@@ -549,5 +714,22 @@ const getConfidenceColor = (confidence) => {
     if (confidence >= 90) return 'bg-green-600';
     if (confidence >= 50) return 'bg-orange-500';
     return 'bg-gray-400';
+};
+
+const openTransactionDetails = (transaction) => {
+    selectedTransaction.value = { ...transaction };
+    showTransactionModal.value = true;
+};
+
+const toggleTransactionStatus = (transaction) => {
+    if (!transaction) return;
+
+    if (transaction.status === 'Conciliado') {
+        transaction.status = 'Pendiente';
+        transaction.confidence = Math.min(transaction.confidence, 80);
+    } else {
+        transaction.status = 'Conciliado';
+        if (transaction.confidence < 90) transaction.confidence = 95;
+    }
 };
 </script>

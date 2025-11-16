@@ -15,7 +15,9 @@ class UploadModel(Base):
     original_filename = Column(Text, nullable=False)
     storage_path = Column(Text, nullable=False)
     status = Column(Text, nullable=False, default="uploaded")
-    metadata = Column("metadata", JSONB, nullable=True)
+    # Nota: no podemos usar el nombre de atributo "metadata" porque está reservado por SQLAlchemy.
+    # Mantenemos el nombre de columna "metadata" en la BD para compatibilidad.
+    upload_metadata = Column("metadata", JSONB, nullable=True)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(
         DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
