@@ -14,30 +14,38 @@ if str(backend_dir) not in sys.path:
 try:
     from app.services.openai_service import OpenAIBankExtractor
     from app.services.conciliation_service import ConciliationService
-    from app.schemas.conciliation_schemas import ConciliationResult
+    from app.schemas.conciliation_schemas import (
+        ConciliationResult,
+        ReconciliationItem,
+        DashboardSummary,
+    )
 except ImportError:
-    # Fallback to absolute imports
+    # Fallback a imports absolutos usando importlib
     import importlib.util
-    
-    # Load openai_service
+
+    # Cargar openai_service
     openai_path = backend_dir / "app" / "services" / "openai_service.py"
     spec = importlib.util.spec_from_file_location("openai_service", openai_path)
     openai_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(openai_module)
     OpenAIBankExtractor = openai_module.OpenAIBankExtractor
-    
-    # Load conciliation_service
+
+    # Cargar conciliation_service
     conciliation_path = backend_dir / "app" / "services" / "conciliation_service.py"
     spec = importlib.util.spec_from_file_location("conciliation_service", conciliation_path)
     conciliation_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(conciliation_module)
     ConciliationService = conciliation_module.ConciliationService
-    
-    # For schemas, we'll use dict instead
+
+    # Para los esquemas usamos dict como fallback sencillo
     ConciliationResult = dict
+    ReconciliationItem = dict
+    DashboardSummary = dict
 
 from auth.action import get_current_user
 from schemas.user import UserResponse
+from crud.dependencies import get_conciliation_crud
+from crud.conciliation import ConciliationCRUD
 
 router = APIRouter(prefix="/conciliation", tags=["conciliation"])
 
@@ -58,7 +66,8 @@ def get_services():
 async def conciliar_archivos(
     extracto_pdf: UploadFile = File(...),
     movimientos_excel: UploadFile = File(...),
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user),
+    conciliation_crud: ConciliationCRUD = Depends(get_conciliation_crud),
 ):
     """
     Endpoint principal que recibe ambos archivos y realiza la conciliación completa.
@@ -99,6 +108,24 @@ async def conciliar_archivos(
             # Realizar conciliación
             print("🔄 Realizando conciliación...")
             resultado = conciliator.conciliar(transacciones_pdf, transacciones_excel)
+
+            # Persistir resultado en la base de datos (Supabase)
+            try:
+                reconciliation = await conciliation_crud.persist_conciliation_result(
+                    user_id=current_user.id,
+                    storage_path="supabase://banksync/uploads",
+                    pdf_filename=extracto_pdf.filename,
+                    excel_filename=movimientos_excel.filename,
+                    pdf_file_path=pdf_path,
+                    excel_file_path=excel_path,
+                    pdf_transactions=transacciones_pdf,
+                    excel_transactions=transacciones_excel,
+                    result_summary=resultado["summary"],
+                )
+                resultado["reconciliation_id"] = str(reconciliation.id)
+            except Exception as db_error:
+                # No romper la experiencia del usuario si falla la persistencia
+                print(f"⚠ Error guardando conciliación en BD: {db_error}")
             
             print(f"✅ Conciliación completada: {resultado['summary']['coincidencias_encontradas']} coincidencias")
             
@@ -144,6 +171,41 @@ async def probar_pdf(
     
     except Exception as e:
         raise HTTPException(500, f"Error probando PDF: {str(e)}")
+
+
+@router.get("/historial", response_model=List[ReconciliationItem])
+async def listar_conciliaciones(
+    current_user: UserResponse = Depends(get_current_user),
+    conciliation_crud: ConciliationCRUD = Depends(get_conciliation_crud),
+):
+    """
+    Devuelve las conciliaciones más recientes del usuario actual para mostrar en
+    historial, reportes o dashboard.
+    """
+    reconciliations = await conciliation_crud.list_recent_reconciliations()
+    # Por simplicidad, por ahora no filtramos por usuario: asumimos un tenant
+    return [
+        ReconciliationItem(
+            id=str(rec.id),
+            name=rec.name,
+            status=rec.status,
+            created_at=rec.created_at,
+            summary=rec.summary or {},
+        )
+        for rec in reconciliations
+    ]
+
+
+@router.get("/dashboard-resumen", response_model=DashboardSummary)
+async def dashboard_resumen(
+    current_user: UserResponse = Depends(get_current_user),
+    conciliation_crud: ConciliationCRUD = Depends(get_conciliation_crud),
+):
+    """
+    Resumen agregado para el dashboard principal.
+    """
+    summary_dict = await conciliation_crud.get_dashboard_summary()
+    return DashboardSummary(**summary_dict)
 
 
 @router.get("/health")

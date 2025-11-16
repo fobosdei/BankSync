@@ -1,0 +1,192 @@
+from decimal import Decimal, InvalidOperation
+from typing import Any, Dict, List, Optional
+from uuid import UUID, uuid4
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from models.conciliation import (
+    ReconciliationModel,
+    TransactionModel,
+    UploadModel,
+)
+
+
+class ConciliationCRUD:
+    def __init__(self, db_session: AsyncSession):
+        self.db_session = db_session
+
+    async def create_upload(
+        self,
+        *,
+        user_id: UUID,
+        original_filename: str,
+        storage_path: str,
+        status: str = "processed",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> UploadModel:
+        upload = UploadModel(
+            id=uuid4(),
+            user_id=user_id,
+            original_filename=original_filename,
+            storage_path=storage_path,
+            status=status,
+            metadata=metadata or {},
+        )
+        self.db_session.add(upload)
+        await self.db_session.flush()
+        await self.db_session.refresh(upload)
+        return upload
+
+    async def create_transactions_for_upload(
+        self, upload_id: UUID, transactions: List[Dict[str, Any]], source: str
+    ) -> None:
+        for entry in transactions:
+            amount = entry.get("monto") or entry.get("amount") or entry.get("valor")
+            if amount is None:
+                continue
+            try:
+                amount_decimal = Decimal(str(amount))
+            except (InvalidOperation, TypeError, ValueError):
+                continue
+            record_data = dict(entry)
+            record_data.setdefault("source", source)
+
+            transaction = TransactionModel(
+                id=uuid4(),
+                upload_id=upload_id,
+                amount=amount_decimal,
+                currency=entry.get("currency", "COP"),
+                internal_reference=entry.get("referencia"),
+                external_reference=entry.get("external_reference"),
+                raw_data=record_data,
+            )
+            self.db_session.add(transaction)
+
+    async def create_reconciliation(
+        self,
+        *,
+        upload_id: UUID,
+        name: str,
+        status: str,
+        summary: Dict[str, Any],
+    ) -> ReconciliationModel:
+        reconciliation = ReconciliationModel(
+            id=uuid4(),
+            upload_id=upload_id,
+            name=name,
+            status=status,
+            summary=summary,
+        )
+        self.db_session.add(reconciliation)
+        await self.db_session.flush()
+        await self.db_session.refresh(reconciliation)
+        return reconciliation
+
+    async def persist_conciliation_result(
+        self,
+        *,
+        user_id: UUID,
+        storage_path: str,
+        pdf_filename: str,
+        excel_filename: str,
+        pdf_file_path: str,
+        excel_file_path: str,
+        pdf_transactions: List[Dict[str, Any]],
+        excel_transactions: List[Dict[str, Any]],
+        result_summary: Dict[str, Any],
+    ) -> ReconciliationModel:
+        upload_metadata = {
+            "pdf_filename": pdf_filename,
+            "excel_filename": excel_filename,
+            "summary": result_summary,
+            "stored_files": {
+                "pdf": pdf_file_path,
+                "excel": excel_file_path,
+            },
+        }
+
+        upload = await self.create_upload(
+            user_id=user_id,
+            original_filename=f"{pdf_filename} | {excel_filename}",
+            storage_path=storage_path,
+            status="processed",
+            metadata=upload_metadata,
+        )
+
+        await self.create_transactions_for_upload(upload.id, pdf_transactions, "pdf")
+        await self.create_transactions_for_upload(upload.id, excel_transactions, "erp")
+
+        reconciliation = await self.create_reconciliation(
+            upload_id=upload.id,
+            name=f"Conciliación - {pdf_filename}",
+            status="completed",
+            summary=result_summary,
+        )
+
+        await self.db_session.flush()
+
+        return reconciliation
+
+    async def list_recent_reconciliations(
+        self, limit: int = 20
+    ) -> List[ReconciliationModel]:
+        """
+        Obtener las conciliaciones más recientes para mostrarlas en historial/reportes.
+        """
+        stmt = (
+            select(ReconciliationModel)
+            .order_by(ReconciliationModel.created_at.desc())
+            .limit(limit)
+        )
+        result = await self.db_session.execute(stmt)
+        return result.scalars().all()
+
+    async def get_dashboard_summary(self) -> Dict[str, Any]:
+        """
+        Construir un resumen simple para el dashboard a partir de las conciliaciones.
+        Usa los campos agregados del JSON `summary` para no recalcular todo.
+        """
+        stmt = select(ReconciliationModel.summary)
+        result = await self.db_session.execute(stmt)
+        summaries = [row or {} for row in result.scalars().all()]
+
+        if not summaries:
+            return {
+                "total_conciliaciones": 0,
+                "promedio_porcentaje_conciliado": 0.0,
+                "total_transacciones_pdf": 0,
+                "total_transacciones_excel": 0,
+                "total_discrepancias": 0,
+                "total_pendientes_pdf": 0,
+                "total_pendientes_erp": 0,
+            }
+
+        total_conciliaciones = len(summaries)
+        sum_porcentaje = 0.0
+        total_pdf = 0
+        total_excel = 0
+        total_discrepancias = 0
+        total_pendientes_pdf = 0
+        total_pendientes_erp = 0
+
+        for s in summaries:
+            sum_porcentaje += float(s.get("porcentaje_conciliado", 0) or 0)
+            total_pdf += int(s.get("total_transacciones_pdf", 0) or 0)
+            total_excel += int(s.get("total_transacciones_excel", 0) or 0)
+            total_discrepancias += int(s.get("discrepancies", 0) or 0)
+            total_pendientes_pdf += int(s.get("transacciones_sin_match_pdf", 0) or 0)
+            total_pendientes_erp += int(s.get("transacciones_sin_match_excel", 0) or 0)
+
+        promedio_porcentaje = sum_porcentaje / total_conciliaciones
+
+        return {
+            "total_conciliaciones": total_conciliaciones,
+            "promedio_porcentaje_conciliado": promedio_porcentaje,
+            "total_transacciones_pdf": total_pdf,
+            "total_transacciones_excel": total_excel,
+            "total_discrepancias": total_discrepancias,
+            "total_pendientes_pdf": total_pendientes_pdf,
+            "total_pendientes_erp": total_pendientes_erp,
+        }
+

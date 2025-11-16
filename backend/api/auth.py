@@ -33,18 +33,19 @@ async def login(
     refresh_token = await create_refresh_token(data={"email": user.email})
 
     await db.update_user_login(email=user.email)
-    expired_time = (
-        int(datetime.now(tz=timezone.utc).timestamp() * 1000)
-        + timedelta(minutes=settings.access_token_expire_minutes).seconds * 1000
+    # Tiempo de expiración del access token en milisegundos (para el frontend)
+    access_exp = datetime.now(tz=timezone.utc) + timedelta(
+        minutes=settings.access_token_expire_minutes
     )
+    expired_time = int(access_exp.timestamp() * 1000)
 
     response.set_cookie(
         "refresh_token",
         refresh_token,
         httponly=True,
         samesite="strict",
-        secure=False,
-        expires=timedelta(settings.refresh_token_expire_minutes),
+        secure=False,  # Cambiar a True en producción con HTTPS
+        expires=timedelta(minutes=settings.refresh_token_expire_minutes),
     )
 
     return Token(
@@ -88,18 +89,18 @@ async def refresh(
     refresh_token = await create_refresh_token(data={"email": email})
 
     await db.update_user_login(email)
-    expired_time = (
-        int(datetime.now(tz=timezone.utc).timestamp() * 1000)
-        + timedelta(minutes=settings.access_token_expire_minutes).seconds * 1000
+    access_exp = datetime.now(tz=timezone.utc) + timedelta(
+        minutes=settings.access_token_expire_minutes
     )
+    expired_time = int(access_exp.timestamp() * 1000)
 
     response.set_cookie(
         "refresh_token",
         refresh_token,
         httponly=True,
         samesite="strict",
-        secure=False,
-        expires=timedelta(settings.refresh_token_expire_minutes),
+        secure=False,  # Cambiar a True en producción con HTTPS
+        expires=timedelta(minutes=settings.refresh_token_expire_minutes),
     )
 
     return Token(

@@ -8,19 +8,35 @@
                     <p class="text-sm text-gray-600 mt-1">Gestiona los movimientos importados desde tus cuentas bancarias</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <button
+                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                        @click="syncBanks"
+                    >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                         Sincronizar
                     </button>
-                    <button class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <button
+                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                        @click="() => $refs.importInput.click()"
+                    >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
                         Importar extracto
                     </button>
-                    <button class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <input
+                        ref="importInput"
+                        type="file"
+                        accept=".csv"
+                        class="hidden"
+                        @change="handleImportFile"
+                    />
+                    <button
+                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                        @click="exportTransactions"
+                    >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
@@ -35,23 +51,25 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
                     <p class="text-sm text-gray-600 mb-2">Total transacciones</p>
-                    <p class="text-2xl font-bold text-gray-900">847</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.total }}</p>
                     <p class="text-xs text-gray-500 mt-1">Este mes</p>
                 </div>
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
                     <p class="text-sm text-gray-600 mb-2">Ingresos</p>
-                    <p class="text-2xl font-bold text-green-600">$185.5M</p>
-                    <p class="text-xs text-gray-500 mt-1">342 transacciones</p>
+                    <p class="text-2xl font-bold text-green-600">{{ formatCurrency(stats.income) }}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ stats.incomeCount }} transacciones</p>
                 </div>
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
                     <p class="text-sm text-gray-600 mb-2">Egresos</p>
-                    <p class="text-2xl font-bold text-red-600">$142.8M</p>
-                    <p class="text-xs text-gray-500 mt-1">505 transacciones</p>
+                    <p class="text-2xl font-bold text-red-600">{{ formatCurrency(stats.expense) }}</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ stats.expenseCount }} transacciones</p>
                 </div>
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
                     <p class="text-sm text-gray-600 mb-2">Sin conciliar</p>
-                    <p class="text-2xl font-bold text-orange-600">124</p>
-                    <p class="text-xs text-gray-500 mt-1">14.6% del total</p>
+                    <p class="text-2xl font-bold text-orange-600">{{ stats.unreconciled }}</p>
+                    <p class="text-xs text-gray-500 mt-1">
+                        {{ stats.total ? ((stats.unreconciled / stats.total) * 100).toFixed(1) : 0 }}% del total
+                    </p>
                 </div>
             </div>
 
@@ -62,27 +80,37 @@
                         <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <input 
-                            type="text" 
+                        <input
+                            v-model="searchQuery"
+                            type="text"
                             placeholder="Buscar transacciones..."
                             class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
                     </div>
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option>Banco</option>
+                    <select
+                        v-model="bankFilter"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Banco</option>
                         <option>Banco Nacional</option>
                         <option>Banco del País</option>
                         <option>Banco Internacional</option>
                     </select>
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option>Tipo</option>
-                        <option>Ingreso</option>
-                        <option>Egreso</option>
+                    <select
+                        v-model="typeFilter"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Tipo</option>
+                        <option value="Ingreso">Ingreso</option>
+                        <option value="Egreso">Egreso</option>
                     </select>
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option>Estado</option>
-                        <option>Procesado</option>
-                        <option>Pendiente</option>
+                    <select
+                        v-model="statusFilter"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Estado</option>
+                        <option value="Procesado">Procesado</option>
+                        <option value="Pendiente">Pendiente</option>
                     </select>
                 </div>
             </div>
@@ -110,7 +138,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="transaction in transactions" :key="transaction.id" class="hover:bg-gray-50">
+                            <tr v-for="transaction in filteredTransactions" :key="transaction.id" class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ transaction.id }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ transaction.date }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ transaction.bank }}</td>
@@ -140,12 +168,12 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     <div class="flex items-center gap-2">
-                                        <button class="text-blue-600 hover:text-blue-700">
+                                        <button class="text-blue-600 hover:text-blue-700" @click="openEditModal(transaction)">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </button>
-                                        <button class="text-red-600 hover:text-red-700">
+                                        <button class="text-red-600 hover:text-red-700" @click="deleteTransaction(transaction.id)">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
@@ -201,10 +229,82 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de edición rápida -->
+    <div
+        v-if="showEditModal && editableTransaction"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+        @click.self="closeEditModal"
+    >
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-900">Editar transacción</h2>
+                <button @click="closeEditModal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-sm">
+                <div>
+                    <label class="block text-gray-700 mb-1">Descripción</label>
+                    <input
+                        v-model="editableTransaction.description"
+                        type="text"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-1">Categoría</label>
+                    <input
+                        v-model="editableTransaction.category"
+                        type="text"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-1">Estado</label>
+                    <select
+                        v-model="editableTransaction.status"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="Procesado">Procesado</option>
+                        <option value="Pendiente">Pendiente</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-700 mb-1">Conciliación</label>
+                    <select
+                        v-model="editableTransaction.reconciliation"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="Conciliada">Conciliada</option>
+                        <option value="Pendiente">Pendiente</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-2">
+                <button
+                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm"
+                    @click="closeEditModal"
+                >
+                    Cancelar
+                </button>
+                <button
+                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+                    @click="saveEdit"
+                >
+                    Guardar cambios
+                </button>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 const transactions = ref([
     { id: 'TRX-2025-1001', date: '2025-10-13', bank: 'Banco Nacional', description: 'Transferencia recibida - Cliente ABC Corp', category: 'Ventas', amount: 15000000, status: 'Pendiente', reconciliation: 'Pendiente' },
@@ -232,6 +332,16 @@ const banks = ref([
     { name: 'Banco Internacional', lastSync: 'Hace 2 horas', status: 'Retraso' }
 ]);
 
+// Filtros
+const searchQuery = ref('');
+const bankFilter = ref('');
+const typeFilter = ref('');
+const statusFilter = ref('');
+
+// Modal de edición
+const showEditModal = ref(false);
+const editableTransaction = ref(null);
+
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-CO', {
         style: 'currency',
@@ -242,5 +352,144 @@ const formatCurrency = (amount) => {
 
 const getReconciliationClass = (status) => {
     return status === 'Conciliada' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
+};
+
+const filteredTransactions = computed(() => {
+    return transactions.value.filter((t) => {
+        const matchesSearch =
+            !searchQuery.value ||
+            t.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+            t.id.toLowerCase().includes(searchQuery.value.toLowerCase());
+        const matchesBank = !bankFilter.value || t.bank === bankFilter.value;
+        const matchesType =
+            !typeFilter.value ||
+            (typeFilter.value === 'Ingreso' && t.amount > 0) ||
+            (typeFilter.value === 'Egreso' && t.amount < 0);
+        const matchesStatus = !statusFilter.value || t.status === statusFilter.value;
+        return matchesSearch && matchesBank && matchesType && matchesStatus;
+    });
+});
+
+const stats = computed(() => {
+    const all = transactions.value;
+    const total = all.length;
+    const incomeTx = all.filter((t) => t.amount > 0);
+    const expenseTx = all.filter((t) => t.amount < 0);
+    const unreconciled = all.filter((t) => t.reconciliation !== 'Conciliada').length;
+
+    return {
+        total,
+        income: incomeTx.reduce((sum, t) => sum + t.amount, 0),
+        expense: expenseTx.reduce((sum, t) => sum + Math.abs(t.amount), 0),
+        incomeCount: incomeTx.length,
+        expenseCount: expenseTx.length,
+        unreconciled,
+    };
+});
+
+const syncBanks = () => {
+    alert('Sincronización simulada: aquí se llamaría al backend/bancos.');
+};
+
+const handleImportFile = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (lines.length <= 1) return;
+
+        const [header, ...rows] = lines;
+        const cols = header.split(',');
+
+        const idIdx = cols.indexOf('id');
+        const dateIdx = cols.indexOf('date');
+        const bankIdx = cols.indexOf('bank');
+        const descIdx = cols.indexOf('description');
+        const catIdx = cols.indexOf('category');
+        const amountIdx = cols.indexOf('amount');
+
+        const imported = rows.map((row, i) => {
+            const parts = row.split(',');
+            return {
+                id: parts[idIdx] || `IMP-${i}`,
+                date: parts[dateIdx] || '',
+                bank: parts[bankIdx] || 'Banco Nacional',
+                description: parts[descIdx] || 'Movimiento',
+                category: parts[catIdx] || 'Sin categoría',
+                amount: Number(parts[amountIdx] || 0),
+                status: 'Pendiente',
+                reconciliation: 'Pendiente',
+            };
+        });
+
+        if (imported.length) {
+            transactions.value = imported;
+            alert(`Se importaron ${imported.length} transacciones desde el CSV.`);
+        }
+    };
+    reader.readAsText(file, 'utf-8');
+
+    // limpiar input para permitir volver a importar el mismo archivo
+    event.target.value = '';
+};
+
+const exportTransactions = () => {
+    const data = filteredTransactions.value;
+    if (!data.length) {
+        alert('No hay transacciones para exportar.');
+        return;
+    }
+
+    const header = ['id', 'date', 'bank', 'description', 'category', 'amount', 'status', 'reconciliation'];
+    const rows = data.map((t) =>
+        [
+            t.id,
+            t.date,
+            t.bank,
+            t.description.replace(/,/g, ' '),
+            t.category.replace(/,/g, ' '),
+            t.amount,
+            t.status,
+            t.reconciliation,
+        ].join(','),
+    );
+    const csv = [header.join(','), ...rows].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'transacciones.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
+const openEditModal = (transaction) => {
+    editableTransaction.value = { ...transaction };
+    showEditModal.value = true;
+};
+
+const closeEditModal = () => {
+    showEditModal.value = false;
+    editableTransaction.value = null;
+};
+
+const saveEdit = () => {
+    if (!editableTransaction.value) return;
+    const idx = transactions.value.findIndex((t) => t.id === editableTransaction.value.id);
+    if (idx !== -1) {
+        transactions.value[idx] = { ...editableTransaction.value };
+    }
+    closeEditModal();
+};
+
+const deleteTransaction = (id) => {
+    if (!confirm('¿Seguro que deseas eliminar esta transacción?')) return;
+    transactions.value = transactions.value.filter((t) => t.id !== id);
 };
 </script>

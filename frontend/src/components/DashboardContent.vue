@@ -24,14 +24,19 @@
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Conciliación Total</p>
-                        <h3 class="text-3xl font-bold text-gray-900">87%</h3>
+                        <h3 class="text-3xl font-bold text-gray-900">
+                            {{ Math.round(resumen.promedio_porcentaje_conciliado || 0) }}%
+                        </h3>
                     </div>
                     <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                         ✓
                     </div>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-                    <div class="bg-green-600 h-2 rounded-full" style="width: 87%"></div>
+                    <div
+                        class="bg-green-600 h-2 rounded-full"
+                        :style="`width: ${Math.round(resumen.promedio_porcentaje_conciliado || 0)}%`"
+                    ></div>
                 </div>
                 <p class="text-xs text-green-600 font-medium">+5% vs mes anterior</p>
             </div>
@@ -56,7 +61,9 @@
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Pendientes</p>
-                        <h3 class="text-3xl font-bold text-gray-900">127</h3>
+                        <h3 class="text-3xl font-bold text-gray-900">
+                            {{ pendientesTotales }}
+                        </h3>
                     </div>
                     <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
                         ⚠
@@ -71,7 +78,9 @@
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Precisión IA</p>
-                        <h3 class="text-3xl font-bold text-gray-900">94.5%</h3>
+                        <h3 class="text-3xl font-bold text-gray-900">
+                            {{ Math.round(resumen.promedio_porcentaje_conciliado || 0) }}%
+                        </h3>
                     </div>
                     <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                         ⚡
@@ -124,21 +133,27 @@
                             <div class="w-3 h-3 bg-green-500 rounded"></div>
                             <span class="text-sm text-gray-600">Conciliado</span>
                         </div>
-                        <span class="text-sm font-semibold text-gray-900">87%</span>
+                        <span class="text-sm font-semibold text-gray-900">
+                            {{ Math.round(resumen.promedio_porcentaje_conciliado || 0) }}%
+                        </span>
                     </div>
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 bg-orange-400 rounded"></div>
                             <span class="text-sm text-gray-600">Pendiente</span>
                         </div>
-                        <span class="text-sm font-semibold text-gray-900">8%</span>
+                        <span class="text-sm font-semibold text-gray-900">
+                            {{ pendientesTotales }}
+                        </span>
                     </div>
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 bg-red-500 rounded"></div>
                             <span class="text-sm text-gray-600">Con Error</span>
                         </div>
-                        <span class="text-sm font-semibold text-gray-900">5%</span>
+                        <span class="text-sm font-semibold text-gray-900">
+                            {{ resumen.total_discrepancias }}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -184,17 +199,38 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { apiGetDashboardResumen } from '@/api/conciliation';
 
-const chartData = ref([
-    { name: 'Ene', conciliado: 85, pendiente: 8 },
-    { name: 'Feb', conciliado: 90, pendiente: 7 },
-    { name: 'Mar', conciliado: 88, pendiente: 9 },
-    { name: 'Abr', conciliado: 92, pendiente: 6 },
-    { name: 'May', conciliado: 87, pendiente: 8 },
-    { name: 'Jun', conciliado: 94, pendiente: 5 }
-]);
+const loading = ref(false);
+const error = ref(null);
+const resumen = ref({
+    total_conciliaciones: 0,
+    promedio_porcentaje_conciliado: 0,
+    total_transacciones_pdf: 0,
+    total_transacciones_excel: 0,
+    total_discrepancias: 0,
+    total_pendientes_pdf: 0,
+    total_pendientes_erp: 0
+});
 
+const pendientesTotales = computed(
+    () => resumen.value.total_pendientes_pdf + resumen.value.total_pendientes_erp
+);
+
+const chartData = computed(() => {
+    const base = Math.round(resumen.value.promedio_porcentaje_conciliado || 0);
+    const pendiente = 100 - base;
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+    return meses.map((name) => ({
+        name,
+        conciliado: base,
+        pendiente
+    }));
+});
+
+// De momento las cuentas bancarias son estáticas; más adelante se pueden
+// alimentar desde Supabase cuando exista el modelo correspondiente.
 const bankAccounts = ref([
     {
         id: 1,
@@ -229,4 +265,18 @@ const bankAccounts = ref([
         percentage: 93
     }
 ]);
+
+onMounted(async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+        const { data } = await apiGetDashboardResumen();
+        resumen.value = data;
+    } catch (e) {
+        console.error('Error cargando resumen de dashboard:', e);
+        error.value = 'No se pudo cargar el resumen de conciliaciones';
+    } finally {
+        loading.value = false;
+    }
+});
 </script>

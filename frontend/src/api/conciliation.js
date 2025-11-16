@@ -72,10 +72,17 @@ export const apiHealthCheck = () => {
 };
 
 /**
- * Obtener historial de conciliaciones (si lo implementas después)
+ * Obtener historial de conciliaciones guardadas en BD
  */
 export const apiGetHistorial = () => {
     return instance.get('/api/conciliation/historial');
+};
+
+/**
+ * Obtener resumen agregado para el dashboard
+ */
+export const apiGetDashboardResumen = () => {
+    return instance.get('/api/conciliation/dashboard-resumen');
 };
 
 /**
