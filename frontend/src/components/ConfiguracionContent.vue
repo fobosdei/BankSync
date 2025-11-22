@@ -84,6 +84,11 @@
                         </table>
                     </div>
 
+                    <!-- Loading State -->
+                    <div v-if="loading" class="text-center py-4">
+                        <p class="text-gray-600">Cargando usuarios...</p>
+                    </div>
+
                     <!-- Permissions Section -->
                     <div class="mt-8">
                         <h4 class="text-lg font-semibold text-gray-900 mb-4">Permisos por Rol</h4>
@@ -97,7 +102,7 @@
                                         <p class="text-sm text-gray-600">{{ role.description }}</p>
                                     </div>
                                     <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
-                                        {{ role.users }} usuarios
+                                        {{ getUsersCountByRole(role.name) }} usuarios
                                     </span>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
@@ -211,6 +216,11 @@ import { ref, computed, onMounted } from 'vue';
 import { apiGetUserList, apiRegister, apiUpdateUser, apiDeactivateUser } from '@/api/user';
 
 const activeTab = ref('usuarios');
+const loading = ref(false);
+const showUserModal = ref(false);
+const showPasswordModal = ref(false);
+const selectedUser = ref(null);
+const editingUser = ref(null);
 
 const tabs = ref([
     { id: 'usuarios', name: 'Usuarios y Roles' },
@@ -259,9 +269,8 @@ const baseRoles = [
         name: 'Auditor',
         description: 'Solo lectura y reportes',
         permissions: [
-            'Ver todas las transacciones',
-            'Historial de auditoría',
-            'Generar reportes',
+            'Ver transacciones propias',
+            'Consultar reportes básicos',
             'Sin permisos de edición'
         ]
     }
@@ -280,11 +289,129 @@ const roles = computed(() => {
     }));
 });
 
+// Función para mapear roles de la BD al frontend
+const mapRole = (role) => {
+    const roleMap = {
+        'user': 'Usuario',
+        'admin': 'Administrador',
+        'accountant': 'Contador'
+    };
+    return roleMap[role] || role;
+};
+
+// Función inversa para enviar al backend
+const mapRoleToBackend = (role) => {
+    const roleMap = {
+        'Usuario': 'user',
+        'Administrador': 'admin',
+        'Contador': 'accountant'
+    };
+    return roleMap[role] || role;
+};
+
+const loadUsers = async () => {
+    loading.value = true;
+    try {
+        const response = await fetch('http://localhost:5001/api/users');
+        
+        if (response.ok) {
+            const usersData = await response.json();
+            
+            users.value = usersData.map(user => ({
+                id: user.id,
+                name: user.full_name || 'Sin nombre',
+                email: user.email,
+                role: mapRole(user.role),
+                active: true,
+                lastAccess: user.last_login 
+                    ? new Date(user.last_login).toLocaleString('es-ES') 
+                    : 'Nunca'
+            }));
+        } else {
+            console.error('Error cargando usuarios:', response.status);
+        }
+    } catch (error) {
+        console.error('Error de conexión:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+
+const createUser = async () => {
+    try {
+        const response = await fetch('http://localhost:5001/api/users', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: newUser.value.email,
+                full_name: newUser.value.full_name,
+                password: newUser.value.temporary_password,
+                role: newUser.value.role
+            })
+        });
+
+        if (response.ok) {
+            await loadUsers();
+            showUserModal.value = false;
+            newUser.value = { email: '', full_name: '', role: 'user', temporary_password: '' };
+            alert('Usuario creado exitosamente');
+        } else {
+            const errorData = await response.json();
+            alert('Error: ' + (errorData.detail || 'No se pudo crear el usuario'));
+        }
+    } catch (error) {
+        console.error('Error creando usuario:', error);
+        alert('Error de conexión con el servidor');
+    }
+};
+
+const updateUser = async () => {
+    alert('Funcionalidad de edición pendiente - Necesita endpoint en backend');
+    showUserModal.value = false;
+};
+
+const changePassword = async () => {
+    if (passwordData.value.new_password !== passwordData.value.confirm_password) {
+        alert('Las contraseñas no coinciden');
+        return;
+    }
+
+    alert('Funcionalidad de cambio de contraseña pendiente - Necesita endpoint en backend');
+    showPasswordModal.value = false;
+};
+
+const deleteUser = async (user) => {
+    if (!confirm(`¿Estás seguro de eliminar a ${user.name}?`)) {
+        return;
+    }
+
+    alert('Funcionalidad de eliminación pendiente - Necesita endpoint en backend');
+};
+
+const openPasswordModal = (user) => {
+    selectedUser.value = user;
+    showPasswordModal.value = true;
+};
+
+const openEditModal = (user) => {
+    editingUser.value = { 
+        ...user,
+        role: mapRoleToBackend(user.role),
+        full_name: user.name
+    };
+    showUserModal.value = true;
+};
+
 const getRoleClass = (role) => {
     const classes = {
         'Administrador': 'bg-purple-100 text-purple-800',
         'Contador': 'bg-blue-100 text-blue-800',
-        'Auditor': 'bg-green-100 text-green-800'
+        'Usuario': 'bg-green-100 text-green-800',
+        'user': 'bg-green-100 text-green-800',
+        'admin': 'bg-purple-100 text-purple-800',
+        'accountant': 'bg-blue-100 text-blue-800'
     };
     return classes[role] || 'bg-gray-100 text-gray-800';
 };

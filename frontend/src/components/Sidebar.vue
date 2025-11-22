@@ -9,7 +9,7 @@
                 <span class="font-semibold text-gray-900">BankSync</span>
             </div>
             <div class="mt-3 text-sm text-gray-600">
-                Empresa Demo S.A.
+                BankSync SAS.
             </div>
         </div>
 
