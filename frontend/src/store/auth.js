@@ -6,13 +6,42 @@ import { useDialogStore } from './dialog';
 import router from '../router';
 
 export const useAuthStore = defineStore('auth', () => {
-    const access_token = ref(null);
-    const expires_in = ref(null);
+    // Intentar cargar token desde localStorage al inicializar
+    const savedToken = localStorage.getItem('bankSync_access_token');
+    const savedExpiresIn = localStorage.getItem('bankSync_expires_in');
+    
+    const access_token = ref(savedToken ? savedToken : null);
+    const expires_in = ref(savedExpiresIn ? parseInt(savedExpiresIn, 10) : null);
 
     const loadingStore = useLoadingStore();
     const dialogStore = useDialogStore();
 
-    const isAuthenticated = computed(() => access_token.value && expires_in.value && expires_in.value > Date.now());
+    // Función helper para guardar en localStorage
+    const saveToStorage = (token, expires) => {
+        if (token) {
+            localStorage.setItem('bankSync_access_token', token);
+        } else {
+            localStorage.removeItem('bankSync_access_token');
+        }
+        if (expires) {
+            localStorage.setItem('bankSync_expires_in', expires.toString());
+        } else {
+            localStorage.removeItem('bankSync_expires_in');
+        }
+    };
+
+    const isAuthenticated = computed(() => {
+        if (!access_token.value || !expires_in.value) {
+            return false;
+        }
+        // Verificar que el token no haya expirado (con margen de 1 minuto)
+        // expires_in está en milisegundos (timestamp de expiración)
+        const now = Date.now();
+        const expiresAt = expires_in.value;
+        // El token es válido si expira en más de 1 minuto
+        const isValid = expiresAt > (now + 60000);
+        return isValid && access_token.value.length > 0;
+    });
     const get_access_token = computed(() => access_token.value);
     const get_expires_in = computed(() => expires_in.value);
 
@@ -26,6 +55,9 @@ export const useAuthStore = defineStore('auth', () => {
         .then(res => {
             access_token.value = res.data.access_token;
             expires_in.value = res.data.expires_in;
+            
+            // Guardar en localStorage para persistencia
+            saveToStorage(res.data.access_token, res.data.expires_in);
 
             dialogStore.setSuccess({
                 title: 'Login Success',
@@ -41,6 +73,7 @@ export const useAuthStore = defineStore('auth', () => {
             });
             access_token.value = null;
             expires_in.value = null;
+            saveToStorage(null, null);
         })
         .finally( () => {
             loadingStore.clearLoading();
@@ -67,6 +100,7 @@ export const useAuthStore = defineStore('auth', () => {
         .then(res => {
             access_token.value = null;
             expires_in.value = null;
+            saveToStorage(null, null); // Limpiar localStorage
 
             dialogStore.setSuccess({
                 title: 'Logout Success',
@@ -78,6 +112,13 @@ export const useAuthStore = defineStore('auth', () => {
                 dialogStore.reset();
                 router.push('/');
             },1000);
+        })
+        .catch(err => {
+            // Aunque falle el logout en el servidor, limpiamos el estado local
+            access_token.value = null;
+            expires_in.value = null;
+            saveToStorage(null, null);
+            router.push('/');
         });
     }
 
@@ -88,6 +129,7 @@ export const useAuthStore = defineStore('auth', () => {
         .then(res => {
             access_token.value = res.data.access_token;
             expires_in.value = res.data.expires_in;
+            saveToStorage(res.data.access_token, res.data.expires_in); // Guardar en localStorage
 
             dialogStore.setSuccess({
                 title: 'Refresh Success',
@@ -99,6 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
             console.log(err);
             access_token.value = null;
             expires_in.value = null;
+            saveToStorage(null, null); // Limpiar si falla
 
             dialogStore.setError({
                 title: 'Refresh Failed',
@@ -125,31 +168,21 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     function refreshForLogin() {
-        loadingStore.setLoading();
-
-        apiRefresh()
+        // NO mostrar loading ni redirigir cuando se usa desde interceptor
+        return apiRefresh()
         .then(res => {
             access_token.value = res.data.access_token;
             expires_in.value = res.data.expires_in;
+            saveToStorage(res.data.access_token, res.data.expires_in); // Guardar en localStorage
+            return res; // Retornar la respuesta para que el interceptor pueda usar el token
         })
         .catch(err => {
             console.log(err);
             access_token.value = null;
             expires_in.value = null;
-        })
-        .finally( () => {
-            
-            if (isAuthenticated.value){
-                router.push('/home');
-                console.log('pushed to home');
-            }
-            else{
-                router.push('/');
-                console.log('pushed to login');
-            }
-
-            loadingStore.clearLoading();
-        })
+            saveToStorage(null, null); // Limpiar si falla
+            throw err; // Re-lanzar el error para que el interceptor lo maneje
+        });
     }
 
     return {

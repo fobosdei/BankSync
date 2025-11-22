@@ -18,11 +18,22 @@
                         </svg>
                         Exportar
                     </button>
-                    <button @click="showUploadModal = true" class="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 flex items-center gap-2">
+                    <button 
+                        v-if="conciliationResult || lastReconciliation"
+                        @click="openPreviousConciliationModal" 
+                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Revisar Conciliación Anterior
+                    </button>
+                    <button @click="openNewConciliationModal" class="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
-                        Conciliar todo con IA
+                        Nueva Conciliación
                     </button>
                 </div>
             </div>
@@ -104,7 +115,9 @@
                 </div>
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
                     <p class="text-sm text-gray-600 mb-2">Conciliadas</p>
-                    <p class="text-2xl font-bold text-green-600">{{ stats.matched }} ({{ stats.matchedPercent }}%)</p>
+                    <p class="text-2xl font-bold text-green-600">
+                        {{ stats.matched }}{{ stats.matchedPercent > 0 ? ` (${stats.matchedPercent}%)` : '' }}
+                    </p>
                 </div>
                 <div class="bg-white rounded-xl p-6 border border-gray-200">
                     <p class="text-sm text-gray-600 mb-2">Sin match PDF</p>
@@ -272,6 +285,7 @@
                     </button>
                 </div>
 
+                <!-- Nueva conciliación - Formulario de carga -->
                 <div v-if="!isProcessing && !conciliationResult" class="space-y-6">
                     <!-- PDF Upload -->
                     <div>
@@ -333,7 +347,7 @@
                     <p class="text-gray-600">{{ processingMessage }}</p>
                 </div>
 
-                <!-- Results State -->
+                <!-- Resultados de nueva conciliación -->
                 <div v-if="conciliationResult && !isProcessing" class="space-y-6">
                     <div class="text-center">
                         <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
@@ -367,11 +381,69 @@
 
                     <!-- Action Buttons -->
                     <div class="flex gap-3">
-                        <button @click="closeModal" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                        <button @click="handleCloseWithResults" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
                             Cerrar
                         </button>
                         <button @click="viewResults" class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
                             Ver Detalles
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para revisar conciliación anterior -->
+        <div v-if="showPreviousConciliationModal && previousConciliationResult" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="closePreviousModal">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Revisar Conciliación Anterior</h2>
+                    <button @click="closePreviousModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                            <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Conciliación Guardada</h3>
+                        <p class="text-gray-600">
+                            {{ previousConciliationResult.summary?.coincidencias_encontradas || 0 }} coincidencias encontradas
+                        </p>
+                    </div>
+
+                    <!-- Summary Stats -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 rounded-lg p-4">
+                            <p class="text-sm text-blue-600 font-medium">Transacciones PDF</p>
+                            <p class="text-2xl font-bold text-blue-900">{{ previousConciliationResult.summary?.total_transacciones_pdf || 0 }}</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <p class="text-sm text-green-600 font-medium">Transacciones ERP</p>
+                            <p class="text-2xl font-bold text-green-900">{{ previousConciliationResult.summary?.total_transacciones_excel || 0 }}</p>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4">
+                            <p class="text-sm text-purple-600 font-medium">Coincidencias</p>
+                            <p class="text-2xl font-bold text-purple-900">{{ previousConciliationResult.summary?.coincidencias_encontradas || 0 }}</p>
+                        </div>
+                        <div class="bg-orange-50 rounded-lg p-4">
+                            <p class="text-sm text-orange-600 font-medium">% Conciliado</p>
+                            <p class="text-2xl font-bold text-orange-900">{{ Math.round(previousConciliationResult.summary?.porcentaje_conciliado || 0) }}%</p>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        <button @click="closePreviousModal" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                            Cerrar
+                        </button>
+                        <button @click="viewPreviousResults" class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
+                            Ver Detalles Completos
                         </button>
                     </div>
                 </div>
@@ -383,12 +455,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { apiConciliar, apiGetHistorial } from '@/api/conciliation';
+import { useNotifications } from '@/composables/useNotifications';
+import { useDialogStore } from '@/store/dialog';
+
+const { showSuccess, showError, showWarning, showInfo } = useNotifications();
+const dialogStore = useDialogStore();
 
 // Modal state
 const showUploadModal = ref(false);
+const showPreviousConciliationModal = ref(false); // Modal separado para revisar conciliación anterior
 const isProcessing = ref(false);
 const processingMessage = ref('Extrayendo transacciones del PDF...');
 const conciliationResult = ref(null);
+const previousConciliationResult = ref(null); // Guardar la conciliación anterior para revisarla
 
 // File uploads
 const pdfFile = ref(null);
@@ -426,10 +505,14 @@ const filteredTransactions = computed(() => {
 
 const stats = computed(() => {
     if (!conciliationResult.value && !lastReconciliation.value) {
+        const total = transactions.value.length;
+        const matched = transactions.value.filter(t => t.status === 'Conciliado').length;
+        // Evitar NaN% cuando no hay transacciones
+        const matchedPercent = total > 0 ? Math.round((matched / total) * 100) : 0;
         return {
-            total: transactions.value.length,
-            matched: transactions.value.filter(t => t.status === 'Conciliado').length,
-            matchedPercent: Math.round((transactions.value.filter(t => t.status === 'Conciliado').length / transactions.value.length) * 100),
+            total,
+            matched,
+            matchedPercent,
             unmatchedPdf: transactions.value.filter(t => t.status === 'Pendiente').length,
             unmatchedErp: transactions.value.filter(t => t.status === 'Revisar').length
         };
@@ -439,11 +522,11 @@ const stats = computed(() => {
         (lastReconciliation.value && lastReconciliation.value.summary) ||
         {};
     return {
-        total: summary.total_transacciones_pdf + summary.total_transacciones_excel,
-        matched: summary.coincidencias_encontradas,
-        matchedPercent: Math.round(summary.porcentaje_conciliado),
-        unmatchedPdf: summary.transacciones_sin_match_pdf,
-        unmatchedErp: summary.transacciones_sin_match_excel
+        total: (summary.total_transacciones_pdf || 0) + (summary.total_transacciones_excel || 0),
+        matched: summary.coincidencias_encontradas || 0,
+        matchedPercent: summary.porcentaje_conciliado ? Math.round(summary.porcentaje_conciliado) : 0,
+        unmatchedPdf: summary.transacciones_sin_match_pdf || 0,
+        unmatchedErp: summary.transacciones_sin_match_excel || 0
     };
 });
 
@@ -476,16 +559,54 @@ const handleExcelDrop = (event) => {
     }
 };
 
-// Cargar historial al montar la vista
+// Cargar historial al montar la vista (SILENCIOSAMENTE, sin alertas)
 onMounted(async () => {
+    // Limpiar cualquier alerta persistente del store al cargar la vista
+    dialogStore.reset();
+    
+    // Primero intentar cargar conciliación desde localStorage (más rápido)
+    try {
+        const savedConciliation = localStorage.getItem('bankSync_last_conciliation');
+        if (savedConciliation) {
+            const parsedData = JSON.parse(savedConciliation);
+            conciliationResult.value = parsedData;
+            // Reconstruir transacciones desde los datos guardados
+            updateTransactionsFromResult(parsedData);
+        }
+    } catch (e) {
+        console.warn('Error cargando conciliación desde localStorage:', e);
+    }
+    
+    // También cargar historial desde backend para mantener sincronización
     try {
         const { data } = await apiGetHistorial();
         if (data && data.length > 0) {
             // Nos quedamos con la más reciente (viene ya ordenado desde el backend)
             lastReconciliation.value = data[0];
+            
+            // Si no hay conciliación en localStorage pero sí en el backend,
+            // intentar cargar la más reciente (aunque solo tenemos el summary)
+            if (!conciliationResult.value && lastReconciliation.value) {
+                // El historial solo tiene summary, no los datos completos
+                // Por ahora, solo actualizamos lastReconciliation
+                // Las transacciones se mantendrán desde localStorage si están disponibles
+            }
         }
+        // Si no hay datos, simplemente no mostramos nada (es normal si no hay conciliaciones aún)
     } catch (e) {
-        console.error('Error cargando historial de conciliaciones:', e);
+        // NO mostramos ninguna alerta al cargar la página
+        // Solo registramos en consola para debugging, sin alertas visuales
+        // La alerta solo aparecerá si el usuario hace clic en "Conciliar todo con IA" y falla
+        if (e.response) {
+            if (e.response.status >= 500) {
+                console.error('Error del servidor (no mostrado al usuario):', e.response.status);
+            } else {
+                console.log('No hay historial disponible (comportamiento normal):', e.response.status);
+            }
+        } else {
+            console.log('Backend no disponible (comportamiento normal si no está levantado):', e.message);
+        }
+        // NO llamamos a showWarning() aquí - la vista carga sin alertas
     }
 });
 
@@ -509,21 +630,51 @@ const processConciliation = async () => {
         const response = await apiConciliar(pdfFile.value, excelFile.value);
         conciliationResult.value = response.data;
         if (response.data.reconciliation_id) {
-            // Después de guardar, refrescamos la última conciliación desde BD
-            const { data: historial } = await apiGetHistorial();
-            if (historial && historial.length > 0) {
-                lastReconciliation.value = historial[0];
+            // Después de guardar, refrescamos la última conciliación desde BD (sin mostrar alerta si falla)
+            try {
+                const { data: historial } = await apiGetHistorial();
+                if (historial && historial.length > 0) {
+                    lastReconciliation.value = historial[0];
+                }
+            } catch (e) {
+                // Silenciosamente intentamos recargar, pero no mostramos alerta en este caso
+                console.warn('No se pudo recargar el historial después de la conciliación:', e);
+            }
+        }
+        
+        // Guardar resultado completo en localStorage para persistencia
+        if (response.data) {
+            try {
+                localStorage.setItem('bankSync_last_conciliation', JSON.stringify(response.data));
+                // Guardar también como conciliación anterior para revisar después
+                previousConciliationResult.value = { ...response.data };
+            } catch (e) {
+                console.warn('No se pudo guardar la conciliación en localStorage:', e);
             }
         }
         
         // Update transactions table with results
         updateTransactionsFromResult(response.data);
         
+        // NO cerrar el modal aquí - mostrar los resultados primero
+        // El usuario puede cerrar el modal cuando quiera ver los detalles
+        isProcessing.value = false;
+        
+        // Limpiar los archivos seleccionados (pero mantener el modal abierto para mostrar resultados)
+        pdfFile.value = null;
+        excelFile.value = null;
+        
+        showSuccess(
+            `Conciliación completada: ${response.data.summary?.coincidencias_encontradas || 0} coincidencias encontradas`,
+            'Conciliación Exitosa'
+        );
+        
     } catch (error) {
         console.error('Error en conciliación:', error);
-        alert('Error al procesar la conciliación: ' + (error.response?.data?.detail || error.message));
-    } finally {
+        const errorMessage = error.response?.data?.detail || error.message || 'Error desconocido al procesar la conciliación';
         isProcessing.value = false;
+        // No cerrar el modal si hay error, para que el usuario pueda intentar de nuevo
+        showError(errorMessage, 'Error en Conciliación');
     }
 };
 
@@ -586,12 +737,23 @@ const viewResults = () => {
     window.scrollTo({ top: 400, behavior: 'smooth' });
 };
 
+// Ver detalles de la conciliación anterior
+const viewPreviousResults = () => {
+    closePreviousModal();
+    // Los resultados ya están en la tabla (conciliationResult o lastReconciliation)
+    // Solo hacer scroll a la tabla
+    window.scrollTo({ top: 400, behavior: 'smooth' });
+};
+
 // Exportar (por ahora solo descarga el JSON de la última conciliación en el navegador)
 const exportarUltimaConciliacion = () => {
     const data =
         conciliationResult.value ||
         (lastReconciliation.value && lastReconciliation.value.summary);
-    if (!data) return;
+    if (!data) {
+        showWarning('No hay datos de conciliación para exportar.', 'Sin Datos');
+        return;
+    }
 
     const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: 'application/json'
@@ -604,107 +766,86 @@ const exportarUltimaConciliacion = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    showSuccess('Archivo de conciliación exportado correctamente.', 'Exportación Exitosa');
 };
 
-// Close modal and reset
+// Abrir modal para nueva conciliación (limpia estado anterior)
+const openNewConciliationModal = () => {
+    // Guardar la conciliación anterior si existe
+    if (conciliationResult.value) {
+        previousConciliationResult.value = { ...conciliationResult.value };
+    }
+    
+    // Limpiar estado para nueva conciliación
+    conciliationResult.value = null;
+    pdfFile.value = null;
+    excelFile.value = null;
+    isProcessing.value = false;
+    
+    // Abrir modal
+    showUploadModal.value = true;
+};
+
+// Abrir modal para revisar conciliación anterior
+const openPreviousConciliationModal = () => {
+    // Intentar cargar desde localStorage primero
+    try {
+        const savedConciliation = localStorage.getItem('bankSync_last_conciliation');
+        if (savedConciliation) {
+            const parsedData = JSON.parse(savedConciliation);
+            previousConciliationResult.value = parsedData;
+            showPreviousConciliationModal.value = true;
+            return;
+        }
+    } catch (e) {
+        console.warn('Error cargando conciliación desde localStorage:', e);
+    }
+    
+    // Si no hay en localStorage, usar la conciliación actual o del historial
+    if (conciliationResult.value) {
+        previousConciliationResult.value = conciliationResult.value;
+        showPreviousConciliationModal.value = true;
+    } else if (lastReconciliation.value) {
+        // Convertir lastReconciliation al formato completo si solo tiene summary
+        if (lastReconciliation.value.summary) {
+            previousConciliationResult.value = {
+                summary: lastReconciliation.value.summary,
+                reconciliation_id: lastReconciliation.value.id
+            };
+            showPreviousConciliationModal.value = true;
+        }
+    } else {
+        showWarning('No hay conciliación anterior disponible para revisar.', 'Sin Datos');
+    }
+};
+
+// Cerrar modal de nueva conciliación con resultados (guardar como anterior)
+const handleCloseWithResults = () => {
+    // Si hay resultados, guardarlos como conciliación anterior antes de cerrar
+    if (conciliationResult.value) {
+        previousConciliationResult.value = { ...conciliationResult.value };
+    }
+    closeModal();
+};
+
+// Cerrar modal de nueva conciliación
 const closeModal = () => {
     showUploadModal.value = false;
     pdfFile.value = null;
     excelFile.value = null;
     isProcessing.value = false;
-    conciliationResult.value = null;
+    // NO limpiar conciliationResult aquí - debe persistir al cambiar de módulo
+    // conciliationResult.value = null;
 };
 
-const transactions = ref([
-    {
-        id: 1,
-        date: '2025-10-10',
-        description: 'Transferencia Nómina Empleados',
-        reference: 'TRF-2025-1001',
-        account: 'Banco Nacional',
-        bankAmount: 12500000,
-        accountingAmount: 12500000,
-        status: 'Conciliado',
-        confidence: 98
-    },
-    {
-        id: 2,
-        date: '2025-10-09',
-        description: 'Pago Proveedor ABC S.A.',
-        reference: 'PAG-2025-0892',
-        account: 'Banco del País',
-        bankAmount: 3200000,
-        accountingAmount: 3200000,
-        status: 'Pendiente',
-        confidence: 92
-    },
-    {
-        id: 3,
-        date: '2025-10-08',
-        description: 'Ingreso por ventas retail',
-        reference: 'ING-2025-3441',
-        account: 'Banco Nacional',
-        bankAmount: 8750000,
-        accountingAmount: 8700000,
-        status: 'Revisar',
-        confidence: 45
-    },
-    {
-        id: 4,
-        date: '2025-10-08',
-        description: 'Pago servicios públicos',
-        reference: 'SRV-2025-0234',
-        account: 'Banco Digital',
-        bankAmount: 450000,
-        accountingAmount: 450000,
-        status: 'Conciliado',
-        confidence: 100
-    },
-    {
-        id: 5,
-        date: '2025-10-07',
-        description: 'Transferencia cliente XYZ Corp',
-        reference: 'TRF-2025-1023',
-        account: 'Banco Internacional',
-        bankAmount: 15000000,
-        accountingAmount: null,
-        status: 'Pendiente',
-        confidence: 0
-    },
-    {
-        id: 6,
-        date: '2025-10-07',
-        description: 'Comisión bancaria mensual',
-        reference: 'COM-2025-0098',
-        account: 'Banco Nacional',
-        bankAmount: -45000,
-        accountingAmount: -45000,
-        status: 'Conciliado',
-        confidence: 95
-    },
-    {
-        id: 7,
-        date: '2025-10-06',
-        description: 'Reembolso gastos operativos',
-        reference: 'REM-2025-0456',
-        account: 'Banco del País',
-        bankAmount: 1200000,
-        accountingAmount: 1250000,
-        status: 'Revisar',
-        confidence: 67
-    },
-    {
-        id: 8,
-        date: '2025-10-06',
-        description: 'Pago arrendamiento oficina',
-        reference: 'ARR-2025-0012',
-        account: 'Banco Nacional',
-        bankAmount: -5500000,
-        accountingAmount: -5500000,
-        status: 'Conciliado',
-        confidence: 99
-    }
-]);
+// Cerrar modal de revisión de conciliación anterior
+const closePreviousModal = () => {
+    showPreviousConciliationModal.value = false;
+};
+
+// Las transacciones se generan dinámicamente desde los resultados de conciliación
+// o se cargan desde el historial. Inicializamos vacío.
+const transactions = ref([]);
 
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-CO', {

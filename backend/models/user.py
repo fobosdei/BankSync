@@ -14,9 +14,10 @@ class UserModels(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     email = Column(Text, unique=True, nullable=False, index=True)
     full_name = Column(Text, nullable=True)
-    password_hash = Column(Text, nullable=False)
-    role = Column(Text, default="user")
-    extra = Column(JSONB, nullable=True)
+    password_hash = Column(Text, nullable=True)  # Nullable inicialmente para migración
+    role = Column(Text, default="viewer")  # Coincide con schema SQL
+    # Nota: 'metadata' está reservado en SQLAlchemy, pero mapeamos a la columna 'metadata' en BD
+    user_metadata = Column("metadata", JSONB, nullable=True, default=dict)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = Column(DateTime(timezone=True), nullable=True)

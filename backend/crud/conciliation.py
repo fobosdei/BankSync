@@ -31,7 +31,7 @@ class ConciliationCRUD:
             original_filename=original_filename,
             storage_path=storage_path,
             status=status,
-            metadata=metadata or {},
+            upload_metadata=metadata or {},
         )
         self.db_session.add(upload)
         await self.db_session.flush()
@@ -189,4 +189,48 @@ class ConciliationCRUD:
             "total_pendientes_pdf": total_pendientes_pdf,
             "total_pendientes_erp": total_pendientes_erp,
         }
+
+    async def get_transactions(
+        self,
+        user_id: Optional[UUID] = None,
+        upload_id: Optional[UUID] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[TransactionModel]:
+        """
+        Obtener transacciones con filtros opcionales.
+        """
+        stmt = select(TransactionModel)
+        
+        # Filtrar por upload_id si se proporciona
+        if upload_id:
+            stmt = stmt.where(TransactionModel.upload_id == upload_id)
+        elif user_id:
+            # Si se proporciona user_id, filtrar por uploads del usuario
+            # Necesitamos hacer join con UploadModel para filtrar por user_id
+            stmt = stmt.join(
+                UploadModel, 
+                TransactionModel.upload_id == UploadModel.id
+            ).where(UploadModel.user_id == user_id)
+        
+        stmt = stmt.order_by(TransactionModel.created_at.desc()).limit(limit).offset(offset)
+        result = await self.db_session.execute(stmt)
+        return result.scalars().all()
+
+    async def get_unique_banks_from_uploads(self, user_id: UUID) -> List[str]:
+        """
+        Extraer nombres únicos de bancos desde los metadatos de uploads.
+        """
+        stmt = select(UploadModel.upload_metadata).where(UploadModel.user_id == user_id)
+        result = await self.db_session.execute(stmt)
+        metadata_list = result.scalars().all()
+        
+        banks = set()
+        for metadata in metadata_list:
+            if metadata and isinstance(metadata, dict):
+                bank_name = metadata.get("bank_name") or metadata.get("banco")
+                if bank_name:
+                    banks.add(str(bank_name))
+        
+        return sorted(list(banks))
 

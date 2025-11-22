@@ -1,4 +1,5 @@
 from typing import List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -28,7 +29,7 @@ async def register(
 
 @router.put("/{user_id}", response_model=user_schema.UserResponse)
 async def update_user(
-    user_id: str,
+    user_id: UUID,
     request: user_schema.UserUpdate,
     db: UserCRUD = Depends(get_user_crud),
     current_user: user_schema.UserResponse = Depends(get_current_user),
@@ -48,7 +49,7 @@ async def update_user(
 
 @router.post("/{user_id}/deactivate", status_code=status.HTTP_204_NO_CONTENT)
 async def deactivate_user(
-    user_id: str,
+    user_id: UUID,
     db: UserCRUD = Depends(get_user_crud),
     current_user: user_schema.UserResponse = Depends(get_current_user),
 ):

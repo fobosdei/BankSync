@@ -92,9 +92,9 @@
                         class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">Banco</option>
-                        <option>Banco Nacional</option>
-                        <option>Banco del País</option>
-                        <option>Banco Internacional</option>
+                        <option v-for="bank in banks" :key="bank.name" :value="bank.name">
+                            {{ bank.name }}
+                        </option>
                     </select>
                     <select
                         v-model="typeFilter"
@@ -304,33 +304,51 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useNotifications } from '@/composables/useNotifications';
+import { apiGetTransactions, apiGetBanks } from '@/api/conciliation';
 
-const transactions = ref([
-    { id: 'TRX-2025-1001', date: '2025-10-13', bank: 'Banco Nacional', description: 'Transferencia recibida - Cliente ABC Corp', category: 'Ventas', amount: 15000000, status: 'Pendiente', reconciliation: 'Pendiente' },
-    { id: 'TRX-2025-1002', date: '2025-10-13', bank: 'Banco del País', description: 'Pago a Proveedor XYZ S.A.', category: 'Proveedores', amount: -3500000, status: 'Procesado', reconciliation: 'Conciliada' },
-    { id: 'TRX-2025-1003', date: '2025-10-12', bank: 'Banco Nacional', description: 'Depósito efectivo - Recaudo diario', category: 'Ventas', amount: 8750000, status: 'Procesado', reconciliation: 'Conciliada' },
-    { id: 'TRX-2025-1004', date: '2025-10-12', bank: 'Banco Digital', description: 'Transferencia nómina empleados', category: 'Nómina', amount: -12500000, status: 'Procesado', reconciliation: 'Conciliada' },
-    { id: 'TRX-2025-1005', date: '2025-10-11', bank: 'Banco Nacional', description: 'Pago servicios públicos - Sede principal', category: 'Gastos operativos', amount: -450000, status: 'Procesado', reconciliation: 'Conciliada' },
-    { id: 'TRX-2025-1006', date: '2025-10-11', bank: 'Banco Nacional', description: 'Comisión bancaria', category: 'Gastos financieros', amount: -45000, status: 'Procesado', reconciliation: 'Conciliada' },
-    { id: 'TRX-2025-1007', date: '2025-10-10', bank: 'Banco Internacional', description: 'Transferencia recibida - Contrato servicios', category: 'Ventas', amount: 25000000, status: 'Procesado', reconciliation: 'Pendiente' },
-    { id: 'TRX-2025-1008', date: '2025-10-10', bank: 'Banco Nacional', description: 'Pago arrendamiento - Oficina central', category: 'Arrendamiento', amount: -5500000, status: 'Procesado', reconciliation: 'Conciliada' },
-    { id: 'TRX-2025-1009', date: '2025-10-09', bank: 'Banco del País', description: 'Reembolso gastos operativos', category: 'Otros ingresos', amount: 1200000, status: 'Procesado', reconciliation: 'Conciliada' },
-    { id: 'TRX-2025-1010', date: '2025-10-09', bank: 'Banco Digital', description: 'Compra suministros oficina', category: 'Gastos operativos', amount: -850000, status: 'Procesado', reconciliation: 'Pendiente' }
-]);
+const { showSuccess, showError, showWarning, showInfo } = useNotifications();
 
-const categories = ref([
-    { name: 'Ventas', count: 245 },
-    { name: 'Proveedores', count: 189 },
-    { name: 'Nómina', count: 52 },
-    { name: 'Gastos operativos', count: 124 }
-]);
+const transactions = ref([]);
+const loading = ref(false);
 
-const banks = ref([
-    { name: 'Banco Nacional', lastSync: 'Hace 5 min', status: 'Activo' },
-    { name: 'Banco del País', lastSync: 'Hace 15 min', status: 'Activo' },
-    { name: 'Banco Internacional', lastSync: 'Hace 2 horas', status: 'Retraso' }
-]);
+// Cargar transacciones desde el backend
+const loadTransactions = async () => {
+    loading.value = true;
+    try {
+        const { data } = await apiGetTransactions();
+        transactions.value = data || [];
+    } catch (error) {
+        console.error('Error cargando transacciones:', error);
+        showError('No se pudieron cargar las transacciones. Por favor, intenta nuevamente.', 'Error al Cargar');
+        transactions.value = [];
+    } finally {
+        loading.value = false;
+    }
+};
+
+// Categorías calculadas dinámicamente desde las transacciones
+const categories = computed(() => {
+    const categoryMap = {};
+    transactions.value.forEach(t => {
+        const cat = t.category || 'Sin categoría';
+        categoryMap[cat] = (categoryMap[cat] || 0) + 1;
+    });
+    return Object.entries(categoryMap).map(([name, count]) => ({ name, count }));
+});
+
+// Bancos cargados desde el backend
+const banks = ref([]);
+const loadBanks = async () => {
+    try {
+        const { data } = await apiGetBanks();
+        banks.value = data || [];
+    } catch (error) {
+        console.error('Error cargando bancos:', error);
+        banks.value = [];
+    }
+};
 
 // Filtros
 const searchQuery = ref('');
@@ -387,9 +405,21 @@ const stats = computed(() => {
     };
 });
 
-const syncBanks = () => {
-    alert('Sincronización simulada: aquí se llamaría al backend/bancos.');
+const syncBanks = async () => {
+    try {
+        showInfo('Iniciando sincronización con bancos...', 'Sincronizando');
+        // Recargar transacciones y bancos desde el backend
+        await Promise.all([loadTransactions(), loadBanks()]);
+        showSuccess('Sincronización completada. Los datos se actualizaron correctamente.', 'Sincronización Exitosa');
+    } catch (error) {
+        showError('Error al sincronizar con los bancos. Intenta nuevamente más tarde.', 'Error de Sincronización');
+    }
 };
+
+// Cargar datos al montar el componente
+onMounted(async () => {
+    await Promise.all([loadTransactions(), loadBanks()]);
+});
 
 const handleImportFile = (event) => {
     const file = event.target.files[0];
@@ -426,8 +456,11 @@ const handleImportFile = (event) => {
         });
 
         if (imported.length) {
-            transactions.value = imported;
-            alert(`Se importaron ${imported.length} transacciones desde el CSV.`);
+            // Agregar las transacciones importadas a la lista existente
+            transactions.value = [...transactions.value, ...imported];
+            showSuccess(`Se importaron ${imported.length} transacciones desde el CSV.`, 'Importación Exitosa');
+        } else {
+            showWarning('El archivo CSV no contiene transacciones válidas o está vacío.', 'Sin Datos');
         }
     };
     reader.readAsText(file, 'utf-8');
@@ -439,7 +472,7 @@ const handleImportFile = (event) => {
 const exportTransactions = () => {
     const data = filteredTransactions.value;
     if (!data.length) {
-        alert('No hay transacciones para exportar.');
+        showWarning('No hay transacciones para exportar con los filtros actuales.', 'Sin Datos');
         return;
     }
 
@@ -467,6 +500,7 @@ const exportTransactions = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    showSuccess(`Se exportaron ${data.length} transacciones correctamente.`, 'Exportación Exitosa');
 };
 
 const openEditModal = (transaction) => {

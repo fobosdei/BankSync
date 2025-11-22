@@ -2,10 +2,9 @@ import axios from 'axios';
 import { useAuthStore } from '../store/auth';
 
 // Crear instancia de axios con configuración base
-// Usamos la misma baseURL global (VITE_APP_API_URL) y rutas SIN prefijo /api,
-// porque el baseURL ya suele incluir /api (ej: http://localhost:5001/api)
+// Usamos el proxy de Vite en desarrollo (/api) o la URL configurada en VITE_APP_API_URL
 const instance = axios.create({
-    baseURL: import.meta.env.VITE_APP_API_URL
+    baseURL: import.meta.env.VITE_APP_API_URL || '/api'
 });
 
 // Interceptor para agregar el token de autenticación
@@ -18,6 +17,41 @@ instance.interceptors.request.use(
         return config;
     },
     (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Interceptor para manejar errores 401 (token expirado)
+instance.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    async (error) => {
+        const { response, config } = error;
+        if (response && response.status === 401 && config) {
+            const store = useAuthStore();
+            // Solo intentar refresh si no es login o refresh
+            if (!config.url?.includes('/auth/login') && !config.url?.includes('/auth/refresh')) {
+                // Solo intentar refresh una vez para evitar loops
+                if (!config._retry) {
+                    config._retry = true;
+                    try {
+                        // Intentar refrescar el token en modo silencioso
+                        await store.refreshForLogin(true);
+                        // Si el refresh es exitoso, retry la petición original
+                        if (store.isAuthenticated) {
+                            config.headers.Authorization = `Bearer ${store.get_access_token}`;
+                            return instance(config);
+                        }
+                    } catch (refreshError) {
+                        // Si falla el refresh, redirigir a login
+                        console.log('Refresh token failed, logging out');
+                        store.logout();
+                        return Promise.reject(error);
+                    }
+                }
+            }
+        }
         return Promise.reject(error);
     }
 );
@@ -94,4 +128,22 @@ export const apiDescargarReporte = (conciliacionId) => {
     return instance.get(`/conciliation/reporte/${conciliacionId}`, {
         responseType: 'blob'
     });
+};
+
+/**
+ * Obtener transacciones del usuario
+ */
+export const apiGetTransactions = (uploadId = null, limit = 100, offset = 0) => {
+    const params = new URLSearchParams();
+    if (uploadId) params.append('upload_id', uploadId);
+    params.append('limit', limit.toString());
+    params.append('offset', offset.toString());
+    return instance.get(`/conciliation/transactions?${params.toString()}`);
+};
+
+/**
+ * Obtener lista de bancos del usuario
+ */
+export const apiGetBanks = () => {
+    return instance.get('/conciliation/banks');
 };
