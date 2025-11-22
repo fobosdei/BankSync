@@ -1,7 +1,9 @@
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel
+
 
 class ConciliationStatus(str, Enum):
     PENDING = "pending"
@@ -9,12 +11,14 @@ class ConciliationStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
 
+
 class Transaction(BaseModel):
     fecha: str
     descripcion: str
     monto: float
     tipo: str
     referencia: Optional[str] = None
+
 
 class ConciliationResult(BaseModel):
     conciliation_id: str
@@ -28,6 +32,28 @@ class ConciliationResult(BaseModel):
     summary: Dict[str, Any]
     created_at: str
 
+
 class ConciliationRequest(BaseModel):
     extracto_data: List[Transaction]
     erp_data: List[Transaction]
+
+
+class ReconciliationItem(BaseModel):
+    id: str
+    name: str
+    status: str
+    created_at: datetime
+    summary: Dict[str, Any]
+
+    class Config:
+        from_attributes = True
+
+
+class DashboardSummary(BaseModel):
+    total_conciliaciones: int
+    promedio_porcentaje_conciliado: float
+    total_transacciones_pdf: int
+    total_transacciones_excel: int
+    total_discrepancias: int
+    total_pendientes_pdf: int
+    total_pendientes_erp: int

@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
+from fastapi import APIRouter, Depends, HTTPException, status
+
 from auth.action import get_current_user
-from crud.user import UserCRUD
 from crud.dependencies import get_user_crud
+from crud.user import UserCRUD
 from schemas import user as user_schema
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -25,36 +26,38 @@ async def register(
     return created_user
 
 
-@router.delete("", deprecated=True)
-async def delete_user(
-    current_user: user_schema.UserResponse = Depends(get_current_user),
-    db: UserCRUD = Depends(get_user_crud),
-):
-    # return await db.delete_user(email=current_user.email)
-    return "deprecated"
-
-
-@router.put("/password", deprecated=True)
-async def update_password(
-    request: user_schema.PasswordUpdate,
-    current_user: user_schema.UserResponse = Depends(get_current_user),
-    db: UserCRUD = Depends(get_user_crud),
-):
-    # return await db.update_password(email=current_user.email, password=request.password)
-    return "deprecated"
-
-
-@router.put("/profile", deprecated=True)
-async def update_profile(
+@router.put("/{user_id}", response_model=user_schema.UserResponse)
+async def update_user(
+    user_id: str,
     request: user_schema.UserUpdate,
-    current_user: user_schema.UserResponse = Depends(get_current_user),
     db: UserCRUD = Depends(get_user_crud),
+    current_user: user_schema.UserResponse = Depends(get_current_user),
 ):
-    # return await db.update_user(email=current_user.email, user_update=request)
-    return "deprecated"
+    """
+    Actualizar datos básicos de un usuario (full_name, role).
+    No se tocan contraseñas ni se borra nada.
+    """
+    target = await db.get_user_by_id(user_id=user_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await db.update_user_by_id(user_id=user_id, user_update=request)
+    updated = await db.get_user_by_id(user_id=user_id)
+    return updated
 
 
-@router.get("/me", response_model=user_schema.UserResponse, deprecated=True)
-async def protected(current_user: user_schema.UserResponse = Depends(get_current_user)):
-    # return current_user
-    return "deprecated"
+@router.post("/{user_id}/deactivate", status_code=status.HTTP_204_NO_CONTENT)
+async def deactivate_user(
+    user_id: str,
+    db: UserCRUD = Depends(get_user_crud),
+    current_user: user_schema.UserResponse = Depends(get_current_user),
+):
+    """
+    Desactivar un usuario marcando su rol como 'inactive' (no elimina datos).
+    """
+    target = await db.get_user_by_id(user_id=user_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await db.deactivate_user_by_id(user_id=user_id)
+    return None
