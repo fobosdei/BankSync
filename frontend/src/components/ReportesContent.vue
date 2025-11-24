@@ -1,54 +1,55 @@
 <template>
     <div>
         <!-- Header -->
-        <header class="bg-white border-b border-gray-200 px-8 py-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Reportes y Auditorías</h1>
-                    <p class="text-sm text-gray-600 mt-1">Genera informes financieros y revisa el historial de acciones</p>
-                </div>
-            <div class="flex items-center gap-3">
-                    <button
-                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-                        @click="showPeriodModal = true"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Seleccionar periodo
-                    </button>
-                    <button
-                        class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                        @click="handleGenerateReport"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Generar reporte
-                    </button>
-                </div>
-            </div>
-        </header>
+      <!-- Header -->
+<header class="sticky top-0 z-20 bg-white/70 backdrop-blur-md border-b border-white/60 px-8 py-6 shadow-sm">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Reportes y Auditorías</h1>
+            <p class="text-sm text-gray-600 mt-1">Genera informes financieros y revisa el historial de acciones</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white/80 border border-gray-200 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                @click="showPeriodModal = true"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Seleccionar periodo
+            </button>
+            <button
+                class="px-4 py-2 text-sm font-semibold text-white bg-purple-700 rounded-lg shadow-md flex items-center gap-2 transition-all duration-200 hover:bg-purple-800 hover:-translate-y-0.5 hover:shadow-lg active:scale-95"
+                @click="handleGenerateReport"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Generar reporte
+            </button>
+        </div>
+    </div>
+</header>
 
         <div class="p-8">
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <p class="text-sm text-gray-600 mb-2">Tasa de Automatización</p>
                     <p class="text-3xl font-bold text-gray-900">{{ Math.round(dashboardStats.promedio_porcentaje_conciliado || 0) }}%</p>
                     <p class="text-xs text-gray-600 mt-1">Matches automáticos</p>
                 </div>
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <p class="text-sm text-gray-600 mb-2">Tiempo Promedio</p>
                     <p class="text-3xl font-bold text-gray-900">2.3 min</p>
                     <p class="text-xs text-gray-600 mt-1">Por conciliación</p>
                 </div>
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <p class="text-sm text-gray-600 mb-2">Errores Corregidos</p>
                     <p class="text-3xl font-bold text-gray-900">{{ dashboardStats.total_discrepancias || 0 }}</p>
                     <p class="text-xs text-gray-600 mt-1">Este mes</p>
                 </div>
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <p class="text-sm text-gray-600 mb-2">Ajustes Generados</p>
                     <p class="text-3xl font-bold text-gray-900">{{ dashboardStats.total_pendientes_erp || 0 }}</p>
                     <p class="text-xs text-gray-600 mt-1">Asientos contables</p>
@@ -56,7 +57,7 @@
             </div>
 
             <!-- Tabs -->
-            <div class="bg-white rounded-xl border border-gray-200 mb-8">
+            <div class="bg-white rounded-xl border border-gray-200 mb-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div class="border-b border-gray-200">
                     <nav class="flex -mb-px">
                         <button 
@@ -135,7 +136,7 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="report in filteredReports" :key="report.id" class="hover:bg-gray-50">
+                                <tr v-for="report in filteredReports" :key="report.id" class="transition-all duration-200 hover:bg-gray-50 hover:shadow-sm cursor-pointer">
                                     <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ report.name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ report.type }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ report.period }}</td>
@@ -190,7 +191,7 @@
                 <p class="text-sm text-gray-600 mb-6">Genera reportes personalizados</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div v-for="template in templates" :key="template.id" class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div v-for="template in templates" :key="template.id" class="bg-white rounded-xl border border-gray-200 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg cursor-pointer">
                         <div class="flex items-start gap-4 mb-4">
                             <div :class="`w-12 h-12 ${template.color} rounded-lg flex items-center justify-center`">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

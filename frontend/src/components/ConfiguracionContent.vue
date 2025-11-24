@@ -1,7 +1,7 @@
 <template>
     <div>
         <!-- Header -->
-        <header class="bg-white border-b border-gray-200 px-8 py-6">
+        <header class="sticky top-0 z-20 bg-white/70 backdrop-blur-md border-b border-white/60 px-8 py-6 shadow-sm">
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">Configuración</h1>
@@ -12,7 +12,7 @@
 
         <div class="p-8">
             <!-- Tabs -->
-            <div class="bg-white rounded-xl border border-gray-200">
+            <div class="bg-white rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-lg">
                 <div class="border-b border-gray-200">
                     <nav class="flex -mb-px">
                         <button 
@@ -35,7 +35,7 @@
                             <p class="text-sm text-gray-600">Administra los usuarios y sus permisos</p>
                         </div>
                         <button
-                            class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                            class="px-4 py-2 text-sm font-semibold text-white bg-purple-700 rounded-lg shadow-md flex items-center gap-2 transition-all duration-200 hover:bg-purple-800 hover:-translate-y-0.5 hover:shadow-lg active:scale-95"
                             @click="openCreateUser"
                         >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +58,7 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50">
+                                <tr v-for="user in users" :key="user.id" class="transition-all duration-200 hover:bg-gray-50 hover:shadow-sm cursor-pointer">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ user.email }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -95,7 +95,7 @@
                         <p class="text-sm text-gray-600 mb-6">Define los niveles de acceso para cada rol</p>
 
                         <div class="space-y-6">
-                            <div v-for="role in roles" :key="role.name" class="bg-gray-50 rounded-lg p-6">
+                            <div v-for="role in roles" :key="role.name" class="bg-gray-50 rounded-lg p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:bg-white cursor-pointer">
                                 <div class="flex items-center justify-between mb-4">
                                     <div>
                                         <h5 class="font-semibold text-gray-900">{{ role.name }}</h5>
@@ -135,13 +135,13 @@
             </div>
         </div>
 
-        <!-- Modal simple para crear/editar usuario -->
+        <!-- Modal crear/editar usuario -->
         <div
             v-if="showUserModal"
-            class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
             @click.self="closeUserModal"
         >
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+            <div class="bg-white/95 backdrop-blur-sm border border-white/80 rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4">
                 <div class="flex items-center justify-between mb-2">
                     <h3 class="text-lg font-semibold text-gray-900">
                         {{ isEditing ? 'Editar usuario' : 'Agregar usuario' }}
@@ -157,7 +157,7 @@
                         <input
                             v-model="formUser.email"
                             type="email"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                             placeholder="usuario@empresa.com"
                         />
                     </div>
@@ -166,7 +166,7 @@
                         <input
                             v-model="formUser.full_name"
                             type="text"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                             placeholder="Nombre Apellido"
                         />
                     </div>
@@ -175,7 +175,7 @@
                         <input
                             v-model="formUser.password"
                             type="password"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                             placeholder="••••••••"
                         />
                     </div>
@@ -183,7 +183,7 @@
                         <label class="text-sm font-medium text-gray-700">Rol</label>
                         <select
                             v-model="formUser.role"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white/80 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                         >
                             <option value="Administrador">Administrador</option>
                             <option value="Contador">Contador</option>
@@ -194,13 +194,13 @@
 
                 <div class="flex justify-end gap-3 mt-4">
                     <button
-                        class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                        class="px-4 py-2 border border-gray-200 rounded-lg text-gray-700 bg-white/80 font-medium transition-all duration-200 hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
                         @click="closeUserModal"
                     >
                         Cancelar
                     </button>
                     <button
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-purple-700 hover:-translate-y-0.5 hover:shadow-lg active:scale-95"
                         @click="saveUser"
                     >
                         Guardar

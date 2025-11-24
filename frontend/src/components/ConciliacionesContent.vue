@@ -1,7 +1,7 @@
 <template>
     <div>
         <!-- Header -->
-        <header class="bg-white border-b border-gray-200 px-8 py-6">
+        <header class="sticky top-0 z-20 bg-white/70 backdrop-blur-md border-b border-white/60 px-8 py-4 shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">Conciliaciones</h1>
@@ -9,7 +9,7 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <button
-                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white/80 border border-gray-200 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                         @click="exportarUltimaConciliacion"
                         :disabled="!conciliationResult && !lastReconciliation"
                     >
@@ -21,7 +21,7 @@
                     <button 
                         v-if="conciliationResult || lastReconciliation"
                         @click="openPreviousConciliationModal" 
-                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white/80 border border-gray-200 rounded-lg shadow-sm flex items-center gap-2 transition-all duración-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-md"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -29,7 +29,7 @@
                         </svg>
                         Revisar Conciliación Anterior
                     </button>
-                    <button @click="openNewConciliationModal" class="px-4 py-2 text-white bg-purple-600 rounded-lg hover:bg-purple-700 flex items-center gap-2">
+                    <button @click="openNewConciliationModal" class="px-4 py-2 text-sm font-semibold text-white bg-purple-700 rounded-lg shadow-md flex items-center gap-2 transition-all duration-200 hover:bg-purple-800 hover:-translate-y-0.5 hover:shadow-lg active:scale-95">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
@@ -58,25 +58,31 @@
                         class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                 </div>
-                <select v-model="statusFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm flex items-center px-2">
+                    <select v-model="statusFilter" class="w-full px-4 py-2 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
                     <option value="">Estado</option>
                     <option value="Conciliado">Conciliado</option>
                     <option value="Pendiente">Pendiente</option>
                     <option value="Revisar">Revisar</option>
-                </select>
-                <select v-model="accountFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </select>
+                </div>
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm flex items-center px-2">
+                    <select v-model="accountFilter" class="w-full px-4 py-2 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
                     <option value="">Cuenta bancaria</option>
                     <option>Banco Nacional</option>
                     <option>Banco del País</option>
                     <option>Banco Digital</option>
                     <option>Banco Internacional</option>
-                </select>
-                <select v-model="confidenceFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </select>
+                </div>
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm flex items-center px-2">
+                    <select v-model="confidenceFilter" class="w-full px-4 py-2 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
                     <option value="">Confianza IA</option>
                     <option value="alta">Alta (&gt;90%)</option>
                     <option value="media">Media (50-90%)</option>
                     <option value="baja">Baja (&lt;50%)</option>
-                </select>
+                    </select>
+                </div>
             </div>
         </header>
 
@@ -109,28 +115,28 @@
 
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <p class="text-sm text-gray-600 mb-2">Total</p>
                     <p class="text-2xl font-bold text-gray-900">{{ stats.total }} transacciones</p>
                 </div>
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <p class="text-sm text-gray-600 mb-2">Conciliadas</p>
                     <p class="text-2xl font-bold text-green-600">
                         {{ stats.matched }}{{ stats.matchedPercent > 0 ? ` (${stats.matchedPercent}%)` : '' }}
                     </p>
                 </div>
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <p class="text-sm text-gray-600 mb-2">Sin match PDF</p>
                     <p class="text-2xl font-bold text-orange-600">{{ stats.unmatchedPdf }}</p>
                 </div>
-                <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                     <p class="text-sm text-gray-600 mb-2">Sin match ERP</p>
                     <p class="text-2xl font-bold text-red-600">{{ stats.unmatchedErp }}</p>
                 </div>
             </div>
 
             <!-- Transactions Table -->
-            <div class="bg-white rounded-xl border border-gray-200">
+            <div class="bg-white rounded-xl border border-gray-200 transition-all duration-300 hover:shadow-lg">
                 <div class="px-6 py-4 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900">Transacciones</h3>
                     <p class="text-sm text-gray-600">Lista completa de movimientos para conciliación</p>
@@ -151,7 +157,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="transaction in filteredTransactions" :key="transaction.id" class="hover:bg-gray-50">
+                            <tr v-for="transaction in filteredTransactions" :key="transaction.id" class="transition-all duration-200 hover:bg-gray-50 hover:shadow-sm cursor-pointer">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ transaction.date }}</td>
                                 <td class="px-6 py-4 text-sm">
                                     <div class="font-medium text-gray-900">{{ transaction.description }}</div>
@@ -274,8 +280,8 @@
         </div>
 
         <!-- Upload Modal -->
-        <div v-if="showUploadModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="closeModal">
-            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 p-8">
+        <div v-if="showUploadModal" class="fixed inset-0 bg-black/35 backdrop-blur-sm flex items-center justify-center z-50" @click.self="closeModal">
+            <div class="bg-white/95 backdrop-blur-sm border border-white/80 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 p-8">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Conciliar con IA</h2>
                     <button @click="closeModal" class="text-gray-400 hover:text-gray-600">
@@ -290,7 +296,7 @@
                     <!-- PDF Upload -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Extracto Bancario (PDF)</label>
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors cursor-pointer"
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer transition-all duration-200 hover:border-purple-500 hover:-translate-y-0.5 hover:shadow-md bg-white/70"
                              @click="$refs.pdfInput.click()"
                              @dragover.prevent
                              @drop.prevent="handlePdfDrop">
@@ -309,7 +315,7 @@
                     <!-- Excel Upload -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Movimientos ERP (Excel)</label>
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition-colors cursor-pointer"
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer transition-all duration-200 hover:border-purple-500 hover:-translate-y-0.5 hover:shadow-md bg-white/70"
                              @click="$refs.excelInput.click()"
                              @dragover.prevent
                              @drop.prevent="handleExcelDrop">
@@ -327,11 +333,17 @@
 
                     <!-- Action Buttons -->
                     <div class="flex gap-3">
-                        <button @click="closeModal" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                        <button
+                            @click="closeModal"
+                            class="flex-1 px-4 py-3 border border-gray-200 rounded-lg text-gray-700 bg-white/80 font-medium transition-all duration-200 hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                        >
                             Cancelar
                         </button>
-                        <button @click="processConciliation" :disabled="!pdfFile || !excelFile" 
-                                class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        <button
+                            @click="processConciliation"
+                            :disabled="!pdfFile || !excelFile" 
+                            class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 hover:-translate-y-0.5 hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
@@ -350,7 +362,7 @@
                 <!-- Resultados de nueva conciliación -->
                 <div v-if="conciliationResult && !isProcessing" class="space-y-6">
                     <div class="text-center">
-                        <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 shadow-sm">
                             <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
@@ -358,22 +370,21 @@
                         <h3 class="text-2xl font-bold text-gray-900 mb-2">¡Conciliación Completada!</h3>
                         <p class="text-gray-600">{{ conciliationResult.summary.coincidencias_encontradas }} coincidencias encontradas</p>
                     </div>
-
                     <!-- Summary Stats -->
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="rounded-xl p-4 bg-blue-50/90 border border-blue-100 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                             <p class="text-sm text-blue-600 font-medium">Transacciones PDF</p>
                             <p class="text-2xl font-bold text-blue-900">{{ conciliationResult.summary.total_transacciones_pdf }}</p>
                         </div>
-                        <div class="bg-green-50 rounded-lg p-4">
+                        <div class="rounded-xl p-4 bg-green-50/90 border border-green-100 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                             <p class="text-sm text-green-600 font-medium">Transacciones ERP</p>
                             <p class="text-2xl font-bold text-green-900">{{ conciliationResult.summary.total_transacciones_excel }}</p>
                         </div>
-                        <div class="bg-purple-50 rounded-lg p-4">
+                        <div class="rounded-xl p-4 bg-purple-50/90 border border-purple-100 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                             <p class="text-sm text-purple-600 font-medium">Coincidencias</p>
                             <p class="text-2xl font-bold text-purple-900">{{ conciliationResult.summary.coincidencias_encontradas }}</p>
                         </div>
-                        <div class="bg-orange-50 rounded-lg p-4">
+                        <div class="rounded-xl p-4 bg-orange-50/90 border border-orange-100 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                             <p class="text-sm text-orange-600 font-medium">% Conciliado</p>
                             <p class="text-2xl font-bold text-orange-900">{{ Math.round(conciliationResult.summary.porcentaje_conciliado) }}%</p>
                         </div>
@@ -381,10 +392,16 @@
 
                     <!-- Action Buttons -->
                     <div class="flex gap-3">
-                        <button @click="handleCloseWithResults" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                        <button
+                            @click="handleCloseWithResults"
+                            class="flex-1 px-4 py-3 border border-gray-200 rounded-lg text-gray-700 bg-white/80 font-medium transition-all duration-200 hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                        >
                             Cerrar
                         </button>
-                        <button @click="viewResults" class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
+                        <button
+                            @click="viewResults"
+                            class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-purple-700 hover:-translate-y-0.5 hover:shadow-lg active:scale-95"
+                        >
                             Ver Detalles
                         </button>
                     </div>

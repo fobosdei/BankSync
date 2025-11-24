@@ -1,22 +1,22 @@
 <template>
     <div>
         <!-- Header -->
-        <header class="bg-white border-b border-gray-200 px-8 py-6">
+        <header class="sticky top-0 z-20 bg-white/70 backdrop-blur-md border-b border-white/60 px-8 py-4 shadow-sm">
             <div class="flex items-center justify-end gap-3">
                 <button
-                    class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white/80 border border-gray-200 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-md"
                     @click="exportDashboardResumen"
                 >
                     Exportar
                 </button>
                 <button
-                    class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white/80 border border-gray-200 rounded-lg shadow-sm flex items-center gap-2 transition-all duration-200 hover:bg-white hover:-translate-y-0.5 hover:shadow-md"
                     @click="scrollToBankAccounts"
                 >
                     Importar extracto
                 </button>
                 <button
-                    class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                    class="px-4 py-2 text-sm font-semibold text-white bg-purple-700 rounded-lg shadow-md flex items-center gap-2 transition-all duration-200 hover:bg-purple-800 hover:-translate-y-0.5 hover:shadow-lg active:scale-95"
                     @click="$emit('open-conciliation-modal')"
                 >
                     Nueva conciliación
@@ -27,9 +27,9 @@
         <div class="p-8">
         <!-- Stats Cards -->
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <!-- Card 1 -->
-            <div class="bg-white rounded-xl p-6 border border-gray-200">
+            <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Conciliación Total</p>
@@ -56,7 +56,7 @@
             </div>
 
             <!-- Card 2 -->
-            <div class="bg-white rounded-xl p-6 border border-gray-200">
+            <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Tiempo Promedio</p>
@@ -71,7 +71,7 @@
             </div>
 
             <!-- Card 3 -->
-            <div class="bg-white rounded-xl p-6 border border-gray-200">
+            <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <p class="text-sm text-gray-600 mb-1">Pendientes</p>
@@ -84,28 +84,6 @@
                     </div>
                 </div>
                 <p class="text-sm text-gray-600 mb-2">Transacciones</p>
-            </div>
-
-            <!-- Card 4 -->
-            <div class="bg-white rounded-xl p-6 border border-gray-200">
-                <div class="flex items-start justify-between mb-4">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Precisión IA</p>
-                        <h3 class="text-3xl font-bold text-gray-900">
-                            {{ Math.round(resumen.promedio_porcentaje_conciliado || 0) }}%
-                        </h3>
-                    </div>
-                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                        ⚡
-                    </div>
-                </div>
-                <p class="text-sm text-gray-600 mb-2">Matches automáticos</p>
-                <p class="text-xs text-green-600 font-medium" v-if="resumen.total_conciliaciones > 0">
-                    {{ Math.round(resumen.promedio_porcentaje_conciliado || 0) }}% precisión
-                </p>
-                <p class="text-xs text-gray-500 font-medium" v-else>
-                    Sin datos aún
-                </p>
             </div>
         </div>
 
@@ -153,7 +131,7 @@
             </div>
 
             <!-- Pie Chart -->
-            <div class="bg-white rounded-xl p-6 border border-gray-200">
+            <div class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold text-gray-900">Estado Global</h3>
                     <p class="text-sm text-gray-600">Distribución actual</p>
@@ -255,14 +233,14 @@
         </div>
 
         <!-- Bank Accounts -->
-        <div ref="bankAccountsSection" class="bg-white rounded-xl p-6 border border-gray-200">
+        <div ref="bankAccountsSection" class="bg-white rounded-xl p-6 border border-gray-200 transition-all duration-300 hover:shadow-lg">
             <div class="mb-6">
                 <h3 class="text-lg font-semibold text-gray-900">Cuentas Bancarias</h3>
                 <p class="text-sm text-gray-600">Estado de sincronización y conciliación</p>
             </div>
             <div class="space-y-4">
                 <div v-for="account in bankAccounts" :key="account.id" 
-                     class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                     class="flex items-center justify-between p-4 bg-gray-50 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:bg-white">
                     <div class="flex-1">
                         <div class="flex items-center gap-3 mb-2">
                             <h4 class="font-semibold text-gray-900">{{ account.name }}</h4>

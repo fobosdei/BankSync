@@ -1,10 +1,29 @@
 <template>
-    <div class="flex h-screen bg-gray-50">
-        <!-- Sidebar Component -->
-        <Sidebar :currentView="currentView" @change-view="changeView" />
+    <div class="flex h-screen">
+        <!-- Sidebar with dark background -->
+        <div class="relative">
+            <!-- Animated Background for Sidebar -->
+            <div class="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+                <!-- Animated particles -->
+                <div class="absolute inset-0">
+                    <div v-for="i in 20" :key="i" 
+                         class="absolute w-1 h-1 bg-white/20 rounded-full"
+                         :style="{
+                             left: `${Math.random() * 100}%`,
+                             top: `${Math.random() * 100}%`,
+                             animation: `float ${5 + Math.random() * 10}s ease-in-out infinite`,
+                             animationDelay: `${Math.random() * 5}s`
+                         }">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar Component -->
+            <Sidebar :currentView="currentView" @change-view="changeView" class="relative z-10" />
+        </div>
 
-        <!-- Main Content -->
-        <main class="flex-1 overflow-y-auto">
+        <!-- Main Content with light background -->
+        <main class="flex-1 overflow-y-auto bg-gray-50">
             <!-- Dynamic Content -->
             <component
                 :is="currentComponent"
