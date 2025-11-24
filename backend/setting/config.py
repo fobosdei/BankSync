@@ -7,7 +7,8 @@ load_dotenv()
 
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-# Ensure .env is loaded when running via `uvicorn backend.app:app`
+# Ensure .env is loaded when running via `uvicorn app:app` from the backend directory
+# or via `python run.py` which handles the path correctly
 _CURRENT_DIR = os.path.dirname(__file__)
 _ENV_PATH = os.path.abspath(os.path.join(_CURRENT_DIR, "..", ".env"))
 load_dotenv(_ENV_PATH)

@@ -173,8 +173,10 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useNotifications } from '@/composables/useNotifications';
 
 const router = useRouter();
+const { showSuccess, showError, showWarning, showInfo } = useNotifications();
 
 const currentStep = ref(1);
 const procesando = ref(false);
@@ -263,7 +265,7 @@ const removeFileSistema = () => {
 const validarArchivo = (file, maxSizeMB) => {
   const maxSize = maxSizeMB * 1024 * 1024;
   if (file.size > maxSize) {
-    alert(`El archivo es muy grande. Tamaño máximo: ${maxSizeMB}MB`);
+    showError(`El archivo es muy grande. Tamaño máximo: ${maxSizeMB}MB`, 'Archivo Demasiado Grande');
     return false;
   }
   return true;
@@ -310,7 +312,11 @@ const procesarConciliacion = async () => {
 
   setTimeout(() => {
     procesando.value = false;
-    alert('¡Conciliación iniciada con éxito!');
+    showSuccess('¡Conciliación iniciada con éxito!', 'Proceso Iniciado');
+    // Redirigir a la vista de conciliaciones después de un breve delay
+    setTimeout(() => {
+      router.push('/home');
+    }, 1500);
   }, 2000);
 };
 </script>

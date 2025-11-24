@@ -37,44 +37,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 Conciliaciones
-                <span class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">12</span>
             </a>
 
-            <a 
-                @click.prevent="$emit('change-view', 'transacciones')"
-                href="#"
-                :class="currentView === 'transacciones' ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-50'"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors"
-            >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-                Transacciones
-            </a>
-
-            <a 
-                @click.prevent="$emit('change-view', 'registros')"
-                href="#"
-                :class="currentView === 'registros' ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-50'"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors"
-            >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Registros Contables
-            </a>
-
-            <a 
-                @click.prevent="$emit('change-view', 'reglas-ia')"
-                href="#"
-                :class="currentView === 'reglas-ia' ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-50'"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors"
-            >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Reglas de IA
-            </a>
+            <!-- Menú simplificado: solo secciones usadas -->
 
             <a 
                 @click.prevent="$emit('change-view', 'reportes')"

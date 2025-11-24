@@ -214,13 +214,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { apiGetUserList, apiRegister, apiUpdateUser, apiDeactivateUser } from '@/api/user';
+import { useNotifications } from '@/composables/useNotifications';
+
+const { showSuccess, showError, showWarning, showInfo } = useNotifications();
 
 const activeTab = ref('usuarios');
 const loading = ref(false);
-const showUserModal = ref(false);
-const showPasswordModal = ref(false);
-const selectedUser = ref(null);
-const editingUser = ref(null);
+const error = ref(null);
+const users = ref([]);
 
 const tabs = ref([
     { id: 'usuarios', name: 'Usuarios y Roles' },
@@ -229,10 +230,11 @@ const tabs = ref([
     { id: 'sistema', name: 'Sistema' }
 ]);
 
-const error = ref(null);
-const users = ref([]);
-
 // Modal estado
+const showUserModal = ref(false);
+const showPasswordModal = ref(false);
+const selectedUser = ref(null);
+const editingUser = ref(null);
 const isEditing = ref(false);
 const formUser = ref({
     id: null,
@@ -307,99 +309,9 @@ const mapRoleToBackend = (role) => {
     return roleMap[role] || role;
 };
 
-const loadUsers = async () => {
-    loading.value = true;
-    try {
-        const response = await fetch('http://localhost:5001/api/users');
-        
-        if (response.ok) {
-            const usersData = await response.json();
-            
-            users.value = usersData.map(user => ({
-                id: user.id,
-                name: user.full_name || 'Sin nombre',
-                email: user.email,
-                role: mapRole(user.role),
-                active: true,
-                lastAccess: user.last_login 
-                    ? new Date(user.last_login).toLocaleString('es-ES') 
-                    : 'Nunca'
-            }));
-        } else {
-            console.error('Error cargando usuarios:', response.status);
-        }
-    } catch (error) {
-        console.error('Error de conexión:', error);
-    } finally {
-        loading.value = false;
-    }
-};
-
-const createUser = async () => {
-    try {
-        const response = await fetch('http://localhost:5001/api/users', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: newUser.value.email,
-                full_name: newUser.value.full_name,
-                password: newUser.value.temporary_password,
-                role: newUser.value.role
-            })
-        });
-
-        if (response.ok) {
-            await loadUsers();
-            showUserModal.value = false;
-            newUser.value = { email: '', full_name: '', role: 'user', temporary_password: '' };
-            alert('Usuario creado exitosamente');
-        } else {
-            const errorData = await response.json();
-            alert('Error: ' + (errorData.detail || 'No se pudo crear el usuario'));
-        }
-    } catch (error) {
-        console.error('Error creando usuario:', error);
-        alert('Error de conexión con el servidor');
-    }
-};
-
-const updateUser = async () => {
-    alert('Funcionalidad de edición pendiente - Necesita endpoint en backend');
-    showUserModal.value = false;
-};
-
-const changePassword = async () => {
-    if (passwordData.value.new_password !== passwordData.value.confirm_password) {
-        alert('Las contraseñas no coinciden');
-        return;
-    }
-
-    alert('Funcionalidad de cambio de contraseña pendiente - Necesita endpoint en backend');
-    showPasswordModal.value = false;
-};
-
-const deleteUser = async (user) => {
-    if (!confirm(`¿Estás seguro de eliminar a ${user.name}?`)) {
-        return;
-    }
-
-    alert('Funcionalidad de eliminación pendiente - Necesita endpoint en backend');
-};
-
-const openPasswordModal = (user) => {
-    selectedUser.value = user;
-    showPasswordModal.value = true;
-};
-
-const openEditModal = (user) => {
-    editingUser.value = { 
-        ...user,
-        role: mapRoleToBackend(user.role),
-        full_name: user.name
-    };
-    showUserModal.value = true;
+// Función para obtener conteo de usuarios por rol
+const getUsersCountByRole = (roleName) => {
+    return users.value.filter(u => u.role === roleName).length;
 };
 
 const getRoleClass = (role) => {
@@ -430,6 +342,7 @@ onMounted(async () => {
     } catch (e) {
         console.error('Error cargando usuarios:', e);
         error.value = 'No se pudieron cargar los usuarios';
+        showError('No se pudieron cargar los usuarios. Por favor, intenta nuevamente.', 'Error al Cargar');
     } finally {
         loading.value = false;
     }
@@ -492,9 +405,14 @@ const saveUser = async () => {
         }
         await reloadUsers();
         closeUserModal();
+        showSuccess(
+            isEditing.value ? 'Usuario actualizado correctamente.' : 'Usuario creado correctamente.',
+            'Operación Exitosa'
+        );
     } catch (e) {
         console.error('Error guardando usuario:', e);
-        alert('No se pudo guardar el usuario. Revisa la consola para más detalles.');
+        const errorMsg = e.response?.data?.detail || e.message || 'No se pudo guardar el usuario.';
+        showError(errorMsg, 'Error al Guardar');
     }
 };
 
@@ -503,9 +421,11 @@ const deactivateUser = async (user) => {
     try {
         await apiDeactivateUser(user.id);
         await reloadUsers();
+        showSuccess(`Usuario ${user.name} desactivado correctamente.`, 'Usuario Desactivado');
     } catch (e) {
         console.error('Error desactivando usuario:', e);
-        alert('No se pudo desactivar el usuario.');
+        const errorMsg = e.response?.data?.detail || e.message || 'No se pudo desactivar el usuario.';
+        showError(errorMsg, 'Error al Desactivar');
     }
 };
 </script>

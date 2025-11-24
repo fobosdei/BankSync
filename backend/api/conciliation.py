@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from typing import List
+from typing import List, Optional
+from uuid import UUID
 import tempfile
 import os
 import sys
@@ -62,11 +63,11 @@ async def conciliar_archivos(
     """
     try:
         # Validar archivos
-        if not extracto_pdf.filename.endswith('.pdf'):
-            raise HTTPException(400, "El extracto debe ser PDF")
+        if not extracto_pdf.filename or not extracto_pdf.filename.endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="El extracto debe ser PDF")
         
-        if not movimientos_excel.filename.endswith(('.xlsx', '.xls')):
-            raise HTTPException(400, "Los movimientos deben ser Excel")
+        if not movimientos_excel.filename or not movimientos_excel.filename.endswith(('.xlsx', '.xls')):
+            raise HTTPException(status_code=400, detail="Los movimientos deben ser Excel")
         
         print(f"📁 Usuario: {current_user.email}")
         print(f"📁 Procesando: {extracto_pdf.filename} y {movimientos_excel.filename}")
@@ -123,6 +124,9 @@ async def conciliar_archivos(
             os.unlink(pdf_path)
             os.unlink(excel_path)
         
+    except HTTPException:
+        # Re-lanzar HTTPException sin modificar
+        raise
     except Exception as e:
         import traceback
         error_traceback = traceback.format_exc()
@@ -131,7 +135,7 @@ async def conciliar_archivos(
         print("=" * 60)
         print(error_traceback)
         print("=" * 60)
-        raise HTTPException(500, f"Error en conciliación: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error en conciliación: {str(e)}")
 
 
 @router.post("/probar-pdf")
@@ -144,8 +148,8 @@ async def probar_pdf(
     Requiere autenticación.
     """
     try:
-        if not archivo_pdf.filename.endswith('.pdf'):
-            raise HTTPException(400, "El archivo debe ser PDF")
+        if not archivo_pdf.filename or not archivo_pdf.filename.endswith('.pdf'):
+            raise HTTPException(status_code=400, detail="El archivo debe ser PDF")
             
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
             temp_file.write(await archivo_pdf.read())
@@ -162,8 +166,10 @@ async def probar_pdf(
             "data": transacciones
         }
     
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(500, f"Error probando PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error probando PDF: {str(e)}")
 
 
 @router.get("/historial", response_model=List[ReconciliationItem])
@@ -175,18 +181,37 @@ async def listar_conciliaciones(
     Devuelve las conciliaciones más recientes del usuario actual para mostrar en
     historial, reportes o dashboard.
     """
-    reconciliations = await conciliation_crud.list_recent_reconciliations()
-    # Por simplicidad, por ahora no filtramos por usuario: asumimos un tenant
-    return [
-        ReconciliationItem(
-            id=str(rec.id),
-            name=rec.name,
-            status=rec.status,
-            created_at=rec.created_at,
-            summary=rec.summary or {},
-        )
-        for rec in reconciliations
-    ]
+    try:
+        reconciliations = await conciliation_crud.list_recent_reconciliations()
+        # Por simplicidad, por ahora no filtramos por usuario: asumimos un tenant
+        
+        # Si ReconciliationItem es dict (fallback), retornar dicts directamente
+        if ReconciliationItem is dict:
+            return [
+                {
+                    "id": str(rec.id),
+                    "name": rec.name,
+                    "status": rec.status,
+                    "created_at": rec.created_at,
+                    "summary": rec.summary or {},
+                }
+                for rec in reconciliations
+            ]
+        
+        # Si es un schema Pydantic real, crear instancias
+        return [
+            ReconciliationItem(
+                id=str(rec.id),
+                name=rec.name,
+                status=rec.status,
+                created_at=rec.created_at,
+                summary=rec.summary or {},
+            )
+            for rec in reconciliations
+        ]
+    except Exception as e:
+        print(f"❌ Error obteniendo historial: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error obteniendo historial: {str(e)}")
 
 
 @router.get("/dashboard-resumen", response_model=DashboardSummary)
@@ -197,8 +222,87 @@ async def dashboard_resumen(
     """
     Resumen agregado para el dashboard principal.
     """
-    summary_dict = await conciliation_crud.get_dashboard_summary()
-    return DashboardSummary(**summary_dict)
+    try:
+        summary_dict = await conciliation_crud.get_dashboard_summary()
+        
+        # Si DashboardSummary es dict (fallback), retornar dict directamente
+        if DashboardSummary is dict:
+            return summary_dict
+        
+        # Si es un schema Pydantic real, crear instancia
+        return DashboardSummary(**summary_dict)
+    except Exception as e:
+        print(f"❌ Error obteniendo resumen de dashboard: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error obteniendo resumen: {str(e)}")
+
+
+@router.get("/transactions")
+async def get_transactions(
+    current_user: UserResponse = Depends(get_current_user),
+    conciliation_crud: ConciliationCRUD = Depends(get_conciliation_crud),
+    upload_id: Optional[UUID] = None,
+    limit: int = 100,
+    offset: int = 0,
+):
+    """
+    Obtener transacciones del usuario actual.
+    """
+    try:
+        transactions = await conciliation_crud.get_transactions(
+            user_id=current_user.id,
+            upload_id=upload_id,
+            limit=limit,
+            offset=offset,
+        )
+        
+        # Formatear transacciones para el frontend
+        result = []
+        for txn in transactions:
+            raw_data = txn.raw_data or {}
+            result.append({
+                "id": str(txn.id),
+                "date": raw_data.get("fecha") or raw_data.get("date") or txn.created_at.isoformat()[:10],
+                "description": raw_data.get("descripcion") or raw_data.get("description") or "Sin descripción",
+                "reference": txn.internal_reference or txn.external_reference or "N/A",
+                "account": raw_data.get("banco") or raw_data.get("bank") or "N/A",
+                "bank": raw_data.get("banco") or raw_data.get("bank") or "N/A",
+                "amount": float(txn.amount),
+                "currency": txn.currency,
+                "category": raw_data.get("categoria") or raw_data.get("category") or "Sin categoría",
+                "status": raw_data.get("estado") or raw_data.get("status") or "Pendiente",
+                "reconciliation": raw_data.get("conciliacion") or raw_data.get("reconciliation") or "Pendiente",
+            })
+        
+        return result
+    except Exception as e:
+        print(f"❌ Error obteniendo transacciones: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error obteniendo transacciones: {str(e)}")
+
+
+@router.get("/banks")
+async def get_banks(
+    current_user: UserResponse = Depends(get_current_user),
+    conciliation_crud: ConciliationCRUD = Depends(get_conciliation_crud),
+):
+    """
+    Obtener lista de bancos únicos desde los uploads del usuario.
+    """
+    try:
+        banks = await conciliation_crud.get_unique_banks_from_uploads(current_user.id)
+        
+        # Formatear para el frontend
+        result = []
+        for bank_name in banks:
+            result.append({
+                "name": bank_name,
+                "lastSync": "N/A",  # Por ahora, se puede mejorar después
+                "status": "Activo"
+            })
+        
+        return result
+    except Exception as e:
+        print(f"❌ Error obteniendo bancos: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error obteniendo bancos: {str(e)}")
 
 
 @router.get("/health")

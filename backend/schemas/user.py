@@ -30,7 +30,8 @@ class UserResponse(UserBase):
 
 
 class PasswordUpdate(BaseModel):
-    password: str
+    current_password: str  # Contraseña actual para validar
+    new_password: str  # Nueva contraseña
 
 
 class UserUpdate(BaseModel):

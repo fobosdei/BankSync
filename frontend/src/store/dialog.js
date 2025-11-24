@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 export const useDialogStore = defineStore('dialog', () => {
-    const type = ref(''); // 'success' or 'danger' , for bootstrap alert
+    const type = ref(''); // 'success', 'danger', 'warning', 'info' for bootstrap alert
     const show = ref(false);
     const content = ref({
         'title': '',
@@ -27,6 +27,18 @@ export const useDialogStore = defineStore('dialog', () => {
         content.value = newContent;
     }
 
+    async function setWarning(newContent) {
+        show.value = true;
+        type.value = 'warning';
+        content.value = newContent;
+    }
+
+    async function setInfo(newContent) {
+        show.value = true;
+        type.value = 'info';
+        content.value = newContent;
+    }
+
     async function reset() {
         show.value = false;
     }
@@ -37,6 +49,8 @@ export const useDialogStore = defineStore('dialog', () => {
         dialogType,
         setSuccess,
         setError,
+        setWarning,
+        setInfo,
         reset
     }
 })
