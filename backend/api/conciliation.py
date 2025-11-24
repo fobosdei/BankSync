@@ -10,37 +10,13 @@ backend_dir = Path(__file__).parent.parent
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
-# Import services directly
-try:
-    from app.services.openai_service import OpenAIBankExtractor
-    from app.services.conciliation_service import ConciliationService
-    from app.schemas.conciliation_schemas import (
-        ConciliationResult,
-        ReconciliationItem,
-        DashboardSummary,
-    )
-except ImportError:
-    # Fallback a imports absolutos usando importlib
-    import importlib.util
-
-    # Cargar openai_service
-    openai_path = backend_dir / "app" / "services" / "openai_service.py"
-    spec = importlib.util.spec_from_file_location("openai_service", openai_path)
-    openai_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(openai_module)
-    OpenAIBankExtractor = openai_module.OpenAIBankExtractor
-
-    # Cargar conciliation_service
-    conciliation_path = backend_dir / "app" / "services" / "conciliation_service.py"
-    spec = importlib.util.spec_from_file_location("conciliation_service", conciliation_path)
-    conciliation_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(conciliation_module)
-    ConciliationService = conciliation_module.ConciliationService
-
-    # Para los esquemas usamos dict como fallback sencillo
-    ConciliationResult = dict
-    ReconciliationItem = dict
-    DashboardSummary = dict
+from core.services.openai_service import OpenAIBankExtractor
+from core.services.conciliation_service import ConciliationService
+from core.schemas.conciliation_schemas import (
+    ConciliationResult,
+    ReconciliationItem,
+    DashboardSummary,
+)
 
 from auth.action import get_current_user
 from schemas.user import UserResponse
@@ -55,10 +31,21 @@ conciliation_service = None
 
 def get_services():
     global openai_extractor, conciliation_service
+    
+    # Inicializar servicios normalmente
     if openai_extractor is None:
-        openai_extractor = OpenAIBankExtractor()
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("No se encontró OPENAI_API_KEY en variables de entorno")
+        
+        print(f"🔑 Inicializando OpenAI con API key...")
+        openai_extractor = OpenAIBankExtractor(api_key=api_key)
+        print("✅ Cliente OpenAI inicializado correctamente")
+    
     if conciliation_service is None:
         conciliation_service = ConciliationService()
+        print("✅ Servicio de conciliación inicializado")
+        
     return openai_extractor, conciliation_service
 
 
@@ -137,7 +124,13 @@ async def conciliar_archivos(
             os.unlink(excel_path)
         
     except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
         print(f"❌ Error en conciliación: {str(e)}")
+        print("📋 TRACEBACK COMPLETO:")
+        print("=" * 60)
+        print(error_traceback)
+        print("=" * 60)
         raise HTTPException(500, f"Error en conciliación: {str(e)}")
 
 

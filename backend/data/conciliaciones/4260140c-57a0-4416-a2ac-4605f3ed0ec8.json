@@ -1,0 +1,336 @@
+{
+  "conciliation_id": "4260140c-57a0-4416-a2ac-4605f3ed0ec8",
+  "status": "completed",
+  "extracto_transactions": [
+    {
+      "fecha": "2025-11-01",
+      "descripcion": "Depósito en caja principal",
+      "monto": 1500000,
+      "tipo": "ingreso",
+      "referencia": "PDF_0"
+    },
+    {
+      "fecha": "2025-11-02",
+      "descripcion": "Ingreso transferencia Cliente A",
+      "monto": 850000,
+      "tipo": "ingreso",
+      "referencia": "PDF_1"
+    },
+    {
+      "fecha": "2025-11-03",
+      "descripcion": "Cheque emitido Proveedor Y",
+      "monto": 600000,
+      "tipo": "gasto",
+      "referencia": "PDF_2"
+    },
+    {
+      "fecha": "2025-11-03",
+      "descripcion": "Comprobante de egreso Servicios",
+      "monto": 400000,
+      "tipo": "gasto",
+      "referencia": "PDF_3"
+    },
+    {
+      "fecha": "2025-11-04",
+      "descripcion": "Cheque emitido Proveedor Z",
+      "monto": 750000,
+      "tipo": "gasto",
+      "referencia": "PDF_4"
+    },
+    {
+      "fecha": "2025-11-05",
+      "descripcion": "Pago Nómina",
+      "monto": 1300000,
+      "tipo": "gasto",
+      "referencia": "PDF_5"
+    },
+    {
+      "fecha": "2025-11-06",
+      "descripcion": "Depósito a banco",
+      "monto": 950000,
+      "tipo": "ingreso",
+      "referencia": "PDF_6"
+    },
+    {
+      "fecha": "2025-11-07",
+      "descripcion": "Comprobante egreso varios",
+      "monto": 250000,
+      "tipo": "gasto",
+      "referencia": "PDF_7"
+    }
+  ],
+  "erp_transactions": [
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_0"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_1"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_2"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_3"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_4"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_5"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_6"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_7"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_8"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_9"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_10"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_11"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_12"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_13"
+    }
+  ],
+  "matches": [],
+  "discrepancies": [],
+  "unmatched_extracto": [
+    {
+      "fecha": "2025-11-01",
+      "descripcion": "Depósito en caja principal",
+      "monto": 1500000,
+      "tipo": "ingreso",
+      "referencia": "PDF_0"
+    },
+    {
+      "fecha": "2025-11-02",
+      "descripcion": "Ingreso transferencia Cliente A",
+      "monto": 850000,
+      "tipo": "ingreso",
+      "referencia": "PDF_1"
+    },
+    {
+      "fecha": "2025-11-03",
+      "descripcion": "Cheque emitido Proveedor Y",
+      "monto": 600000,
+      "tipo": "gasto",
+      "referencia": "PDF_2"
+    },
+    {
+      "fecha": "2025-11-03",
+      "descripcion": "Comprobante de egreso Servicios",
+      "monto": 400000,
+      "tipo": "gasto",
+      "referencia": "PDF_3"
+    },
+    {
+      "fecha": "2025-11-04",
+      "descripcion": "Cheque emitido Proveedor Z",
+      "monto": 750000,
+      "tipo": "gasto",
+      "referencia": "PDF_4"
+    },
+    {
+      "fecha": "2025-11-05",
+      "descripcion": "Pago Nómina",
+      "monto": 1300000,
+      "tipo": "gasto",
+      "referencia": "PDF_5"
+    },
+    {
+      "fecha": "2025-11-06",
+      "descripcion": "Depósito a banco",
+      "monto": 950000,
+      "tipo": "ingreso",
+      "referencia": "PDF_6"
+    },
+    {
+      "fecha": "2025-11-07",
+      "descripcion": "Comprobante egreso varios",
+      "monto": 250000,
+      "tipo": "gasto",
+      "referencia": "PDF_7"
+    }
+  ],
+  "unmatched_erp": [
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_0"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_1"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_2"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_3"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_4"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_5"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_6"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_7"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_8"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_9"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_10"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_11"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_12"
+    },
+    {
+      "fecha": "",
+      "descripcion": "",
+      "monto": 0,
+      "tipo": "ingreso",
+      "referencia": "EXCEL_13"
+    }
+  ],
+  "summary": {
+    "total_transacciones_pdf": 8,
+    "total_transacciones_excel": 14,
+    "coincidencias_encontradas": 0,
+    "discrepancies": 0,
+    "transacciones_sin_match_pdf": 8,
+    "transacciones_sin_match_excel": 14,
+    "total_monto_pdf": 6600000,
+    "total_monto_excel": 0,
+    "diferencia_total": 6600000,
+    "porcentaje_conciliado": 0
+  },
+  "created_at": "2025-11-16T04:07:30.136395",
+  "user_email": "klk@gmail.com",
+  "user_id": 

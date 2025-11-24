@@ -28,13 +28,13 @@ export const apiConciliar = (pdfFile, excelFile) => {
     formData.append('extracto_pdf', pdfFile);
     formData.append('movimientos_excel', excelFile);
     
-    console.log(' Enviando solicitud a:', `${instance.defaults.baseURL}/api/conciliation/conciliar`);
+    console.log(' Enviando solicitud a:', `${instance.defaults.baseURL}/conciliation/conciliar`);
     console.log(' Archivos:', {
         pdf: pdfFile?.name,
         excel: excelFile?.name
     });
     
-    return instance.post('/api/conciliation/conciliar', formData, {
+    return instance.post('/conciliation/conciliar', formData, {
         headers: {
             'Content-Type': 'multipart/form-data'
         },
@@ -53,9 +53,9 @@ export const apiProbarPDF = (pdfFile) => {
     const formData = new FormData();
     formData.append('archivo_pdf', pdfFile);
     
-    console.log(' Probando extracción PDF en:', `${instance.defaults.baseURL}/api/conciliation/probar-pdf`);
+    console.log(' Probando extracción PDF en:', `${instance.defaults.baseURL}/conciliation/probar-pdf`);
     
-    return instance.post('/api/conciliation/probar-pdf', formData, {
+    return instance.post('/conciliation/probar-pdf', formData, {
         headers: {
             'Content-Type': 'multipart/form-data'
         },
@@ -67,29 +67,29 @@ export const apiProbarPDF = (pdfFile) => {
  * Verificar estado del servicio de conciliación
  */
 export const apiHealthCheck = () => {
-    console.log('🏥 Health check en:', `${instance.defaults.baseURL}/api/conciliation/health`);
-    return instance.get('/api/conciliation/health');
+    console.log('🏥 Health check en:', `${instance.defaults.baseURL}/conciliation/health`);
+    return instance.get('/conciliation/health');
 };
 
 /**
  * Obtener historial de conciliaciones guardadas en BD
  */
 export const apiGetHistorial = () => {
-    return instance.get('/api/conciliation/historial');
+    return instance.get('/conciliation/historial');
 };
 
 /**
  * Obtener resumen agregado para el dashboard
  */
 export const apiGetDashboardResumen = () => {
-    return instance.get('/api/conciliation/dashboard-resumen');
+    return instance.get('/conciliation/dashboard-resumen');
 };
 
 /**
  * Descargar reporte de conciliación (si lo implementas después)
  */
 export const apiDescargarReporte = (conciliacionId) => {
-    return instance.get(`/api/conciliation/reporte/${conciliacionId}`, {
+    return instance.get(`/conciliation/reporte/${conciliacionId}`, {
         responseType: 'blob'
     });
 };

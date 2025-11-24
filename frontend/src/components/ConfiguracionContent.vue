@@ -229,12 +229,10 @@ const tabs = ref([
     { id: 'sistema', name: 'Sistema' }
 ]);
 
-const loading = ref(false);
 const error = ref(null);
 const users = ref([]);
 
 // Modal estado
-const showUserModal = ref(false);
 const isEditing = ref(false);
 const formUser = ref({
     id: null,

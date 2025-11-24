@@ -20,7 +20,7 @@ python-jose==3.3.0
 python-multipart==0.0.9
 
 # Conciliación bancaria
-openai==1.54.0
+openai==2.8.1
 PyPDF2==3.0.1
 pandas==2.2.3
 openpyxl==3.1.3

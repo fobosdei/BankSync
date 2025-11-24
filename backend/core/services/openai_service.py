@@ -30,6 +30,7 @@ class OpenAIBankExtractor:
         if not self.api_key:
             raise ValueError("No se encontró la API key de OpenAI")
         
+        # ✅ SOLUCIÓN SIMPLE: Inicializar sin manejo de proxies
         self.client = OpenAI(api_key=self.api_key)
     
     
@@ -74,12 +75,14 @@ Analiza el siguiente texto de un extracto bancario y extrae TODAS las transaccio
 Para cada transacción, identifica:
 - fecha: Fecha en formato YYYY-MM-DD
 - descripcion: Descripción o concepto
-- valor: Monto NUMÉRICO (conservar negativo/positivo según el extracto)
+- monto: Monto NUMÉRICO (conservar negativo/positivo según el extracto)
 - tipo: "ingreso" o "gasto" (basado en el contexto)
+- referencia: Número de referencia si está disponible (opcional)
 
 IMPORTANTE: 
-- Conserva el signo original del monto en "valor"
+- Conserva el signo original del monto
 - Determina "tipo" basado en el contexto
+- La respuesta debe ser un objeto JSON con una clave "transacciones" que contenga un array
 
 Texto del extracto:
 {text[:3000]}
@@ -105,6 +108,7 @@ Texto del extracto:
             raw_output = response.choices[0].message.content
             transacciones = json.loads(raw_output)
             
+            # Extraer el array de transacciones si viene envuelto
             if isinstance(transacciones, dict) and "transacciones" in transacciones:
                 transacciones = transacciones["transacciones"]
             
@@ -127,15 +131,15 @@ Texto del extracto:
         Returns:
             Lista de transacciones extraídas
         """
-        print(f" Leyendo PDF: {pdf_path}")
+        print(f"📄 Leyendo PDF: {pdf_path}")
         text = self.extract_text_from_pdf(pdf_path)
         
-        print(f" Texto extraído ({len(text)} caracteres)")
-        print(f" Enviando a OpenAI para análisis...")
+        print(f"📝 Texto extraído ({len(text)} caracteres)")
+        print(f"🤖 Enviando a OpenAI para análisis...")
         
         transacciones = self.extract_transactions_from_text(text)
         
-        print(f" {len(transacciones)} transacciones encontradas")
+        print(f"✅ {len(transacciones)} transacciones encontradas")
         
         return transacciones
     
@@ -149,7 +153,7 @@ Texto del extracto:
             output_path: Ruta del archivo CSV de salida
         """
         if not transacciones:
-            print(" No hay transacciones para guardar")
+            print("⚠️ No hay transacciones para guardar")
             return
         
         fieldnames = set()
@@ -163,7 +167,7 @@ Texto del extracto:
             writer.writeheader()
             writer.writerows(transacciones)
         
-        print(f" Archivo CSV generado: {output_path}")
+        print(f"💾 Archivo CSV generado: {output_path}")
     
     
     def save_to_json(self, transacciones: List[Dict], output_path: str = "transacciones.json"):
@@ -177,4 +181,4 @@ Texto del extracto:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(transacciones, f, ensure_ascii=False, indent=2)
         
-        print(f"Archivo JSON generado: {output_path}")
+        print(f"💾 Archivo JSON generado: {output_path}")

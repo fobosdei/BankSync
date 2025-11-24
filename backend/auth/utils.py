@@ -7,8 +7,8 @@ from setting.config import get_settings
 
 settings = get_settings()
 
-#  CAMBIAR a argon2 - más moderno, seguro y sin límite de 72 caracteres
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+#  Soportar tanto argon2 como bcrypt para compatibilidad con contraseñas existentes
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 

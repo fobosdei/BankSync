@@ -4,6 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from api import user, auth, me, conciliation
 from database.config import engine, database, Base
 
+# 🔍 DEBUG: Verificar versión de OpenAI al iniciar
+import openai
+print("=" * 60)
+print(f"🔍 OpenAI version: {openai.__version__}")
+print(f"🔍 OpenAI location: {openai.__file__}")
+print("=" * 60)
 
 app = FastAPI()
 

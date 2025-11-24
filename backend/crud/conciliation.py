@@ -31,7 +31,7 @@ class ConciliationCRUD:
             original_filename=original_filename,
             storage_path=storage_path,
             status=status,
-            metadata=metadata or {},
+            upload_metadata=metadata or {},  # ✅ CORREGIDO: era "metadata"
         )
         self.db_session.add(upload)
         await self.db_session.flush()
@@ -66,14 +66,18 @@ class ConciliationCRUD:
     async def create_reconciliation(
         self,
         *,
-        upload_id: UUID,
+        pdf_upload_id: UUID,  # ✅ CORREGIDO: era "upload_id"
+        excel_upload_id: UUID,  # ✅ AGREGADO
+        user_id: UUID,  # ✅ AGREGADO
         name: str,
         status: str,
         summary: Dict[str, Any],
     ) -> ReconciliationModel:
         reconciliation = ReconciliationModel(
             id=uuid4(),
-            upload_id=upload_id,
+            pdf_upload_id=pdf_upload_id,  # ✅ CORREGIDO
+            excel_upload_id=excel_upload_id,  # ✅ AGREGADO
+            user_id=user_id,  # ✅ AGREGADO
             name=name,
             status=status,
             summary=summary,
@@ -96,29 +100,38 @@ class ConciliationCRUD:
         excel_transactions: List[Dict[str, Any]],
         result_summary: Dict[str, Any],
     ) -> ReconciliationModel:
-        upload_metadata = {
-            "pdf_filename": pdf_filename,
-            "excel_filename": excel_filename,
-            "summary": result_summary,
-            "stored_files": {
-                "pdf": pdf_file_path,
-                "excel": excel_file_path,
-            },
-        }
-
-        upload = await self.create_upload(
+        # ✅ CORREGIDO: Crear uploads separados para PDF y Excel
+        pdf_upload = await self.create_upload(
             user_id=user_id,
-            original_filename=f"{pdf_filename} | {excel_filename}",
-            storage_path=storage_path,
+            original_filename=pdf_filename,
+            storage_path=f"{storage_path}/{pdf_filename}",
             status="processed",
-            metadata=upload_metadata,
+            metadata={
+                "type": "pdf",
+                "stored_file": pdf_file_path,
+            },
         )
 
-        await self.create_transactions_for_upload(upload.id, pdf_transactions, "pdf")
-        await self.create_transactions_for_upload(upload.id, excel_transactions, "erp")
+        excel_upload = await self.create_upload(
+            user_id=user_id,
+            original_filename=excel_filename,
+            storage_path=f"{storage_path}/{excel_filename}",
+            status="processed",
+            metadata={
+                "type": "excel",
+                "stored_file": excel_file_path,
+            },
+        )
 
+        # Crear transacciones para cada upload
+        await self.create_transactions_for_upload(pdf_upload.id, pdf_transactions, "pdf")
+        await self.create_transactions_for_upload(excel_upload.id, excel_transactions, "erp")
+
+        # ✅ CORREGIDO: Usar ambos upload_id
         reconciliation = await self.create_reconciliation(
-            upload_id=upload.id,
+            pdf_upload_id=pdf_upload.id,  # ✅ CORREGIDO
+            excel_upload_id=excel_upload.id,  # ✅ AGREGADO
+            user_id=user_id,  # ✅ AGREGADO
             name=f"Conciliación - {pdf_filename}",
             status="completed",
             summary=result_summary,
@@ -189,4 +202,3 @@ class ConciliationCRUD:
             "total_pendientes_pdf": total_pendientes_pdf,
             "total_pendientes_erp": total_pendientes_erp,
         }
-
