@@ -2,7 +2,7 @@
 
 Aplicación web full-stack con Vue.js 3 + FastAPI + PostgreSQL (Supabase)
 
-## 🚀 Características
+## Características
 
 - Backend FastAPI con PostgreSQL (Supabase)
 - CRUD con SQLAlchemy y soporte async
@@ -20,7 +20,7 @@ Aplicación web full-stack con Vue.js 3 + FastAPI + PostgreSQL (Supabase)
  <img src="https://raw.githubusercontent.com/jason810496/FastAPI-Vue-OAuth2/main/docs/demo.png" alt="demo" height="300" />
 </a>
 
-Click image to watch demo video on YouTube ☝️
+Click image to watch demo video on YouTube 
 
 
 ## Features
@@ -81,7 +81,7 @@ Click image to watch demo video on YouTube ☝️
 - Frontend: Deploy to Vercel, Netlify, or similar
 - Database: Supabase (already cloud-hosted)
 
-## 📦 Instalación y Configuración
+## Instalación y Configuración
 
 ### 1. Clonar el repositorio
 ```bash
@@ -135,7 +135,7 @@ npm run dev
 
 El frontend estará disponible en: `http://localhost:5173`
 
-## 🎯 Uso
+##  Uso
 
 1. **Registro**: Navega a `/register` o haz clic en "Regístrate" en la página de login
 2. **Login**: Usa tus credenciales en la página principal (`/`)
